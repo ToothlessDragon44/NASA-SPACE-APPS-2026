@@ -1,0 +1,19 @@
+.farmers-image{
+    height: 700px;
+    width: 1530px;
+    display: flex;
+    top: 0;
+    left: 0;
+    right: 0;
+    position: relative;
+}
+.para {
+    font-family: "Michroma",sans-serif;
+    position: absolute;
+    bottom: 550px;
+    right: 100px;
+    left: 700px;
+}
+.more-info{
+    color: yellowgreen;
+}

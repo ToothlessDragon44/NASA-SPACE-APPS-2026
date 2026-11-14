@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+
+        <title>TEAM MOTHI MANSA</title>
+
+        <link rel="stylesheet" href="general.css">
+        <link rel = "stylesheet" href="header.css">
+        <link rel="stylesheet" href="subsections.css">
+    </head>
+    <body style="background-color: black; 
+                color: white;
+                margin-bottom: 2000px;"
+                >
+        <div class="header">
+            <div class="left-section">
+                <img class="logo" src="wallpapers/Space_Apps_Logo_Color_and_White.width-440.jpegquality-60.png">
+            </div>
+            <div class="middle-section">
+                <div class="name">TEAM  MOTHI  MANSA</div>
+            </div>
+            <div class ="right-section">
+                <button class="translate1" id="translateBtn">
+                    <img class="translate" src="icons/translate icon.png">
+                </button>                 
+                <p class="guide"> Register/Log in </p>
+                <button class="sign1">
+                    <img class="sign-logo" src="icons/signin.webp">
+                </button>
+            </div>
+        </div>
+        <div class="header2">
+            <a href="1stpage.html" class="H1">Home</a>
+            <a href="2ndpage.html" class="H2">Heading</a>
+            <a href="3rdpage.html" class="H3">Heading</a>
+            <div class="H4">
+                <select class="dropdown" onchange="if(this.value) window.location.href=this.value">
+                    <option value="" disabled selected>Heading</option>
+                    <option value="2ndpart.html">option2</option>
+                    <option value="3rdpart.html">option3</option>
+                    <option value="4thpart.html">option4</option>
+                    <option value="5thpart.html">option5</option>
+                </select>
+            </div>
+            <a href="5thpage.html" class="H5">About</a>
+        </div>
+        <div>
+            <img class="farmers-image" src="wallpapers/farmer background.png">
+            <div class="para">
+                Farmers around the world navigate shifting temperatures, changing rainfall patterns, water shortages, extreme weather, and declining soil health. These pressures make it difficult to choose crop rotations that protect fields, conserve water, and support long‑term resilience. Your challenge is to create a decision‑support tool that uses NASA Earth observations along with local soil information, crop characteristics, and farmer priorities to help farmers explore rotation strategies that could strengthen soil health and adapt their farms to changing conditions.
+                <a class="more-info" target="blank" href="https://www.spaceappschallenge.org/2026/challenges/adapting-farms-with-nasa-data/">View More &rarr;</a>
+            </div>
+        </div>
+        <div id="translateBox">
+            <div id="google_translate_element"></div>
+        </div>
+        <div class="news">
+            Hotline
+            <div class="h1">HEAD1</div>
+            <div class="h2">HEAD1</div>
+            <div class="h3">HEAD1</div>
+            <div class="h4">HEAD1</div>
+            <div class="h5">HEAD1</div>
+            <div class="h6">HEAD1</div>
+        </div>
+        <div></div>
+        <script>
+            document.getElementById("translateBtn").addEventListener("click", function() {
+                document.getElementById("translateBox").classList.toggle("show");
+            });
+
+            function googleTranslateElementInit() {
+                new google.translate.TranslateElement(
+                    {pageLanguage: 'en'},
+                    'google_translate_element'
+                );
+            }
+        </script>
+
+        <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    </body>
+</html>

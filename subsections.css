@@ -1,0 +1,21 @@
+.news{
+    font-family: "Michroma", sans-serif;
+    font-weight: 700;
+    height: 300px;
+    padding: 10px;
+    color: black;
+    background-color: greenyellow;
+    border-radius: 5px;
+    margin-left: 300px;
+    margin-top: 50px;
+    margin-right: 300px;
+}
+.news:hover{
+    cursor: pointer;
+    box-shadow: 0px 2px 5px rgb(226, 255, 3);;
+    
+}
+.h1,.h2,.h3,.h4,.h5,.h6{
+    font-family: arial;
+    font-size: 16px;
+}
