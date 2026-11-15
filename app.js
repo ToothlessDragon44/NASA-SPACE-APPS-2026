@@ -242,14 +242,26 @@ function renderRotationCards() {
           ? `Recommended from ${calendar.sourceLabel}: ${reasons[0]}, matching ${weather.annualRain} mm/yr rainfall and ${Math.round(soil.rootWetness * 100)}% root wetness.`
           : `Selected from ${calendar.sourceLabel} to fit local soil texture and ${weather.marchHeat}°C March heat limits.`;
 
+        const kEn = formatForEnglishSpeech(getCropName(kId, "en"));
+        const rEn = formatForEnglishSpeech(getCropName(rId, "en"));
+        const zEn = formatForEnglishSpeech(getCropName(zId, "en"));
+
+        const speechByLang = {
+          en: `Option ${candidates.length + 1}. Kharif: ${kEn}. Rabi: ${rEn}. Zaid: ${zEn}. Suitability ${finalScore} percent.`,
+          hi: `विकल्प. खरीफ में ${getCropName(kId, "hi")}, रबी में ${getCropName(rId, "hi")}, और जायद में ${getCropName(zId, "hi")} उगाएं। अनुकूलता ${finalScore} प्रतिशत है।`,
+          mr: `पर्याय. खरीप हंगामात ${getCropName(kId, "mr")}, रब्बीमध्ये ${getCropName(rId, "mr")}, आणि उन्हाळी हंगामात ${getCropName(zId, "mr")} घ्यावे. अनुकूलता ${finalScore} टक्के आहे.`,
+          gu: `વિકલ્પ. ખરીફમાં ${getCropName(kId, "gu")}, રવિમાં ${getCropName(rId, "gu")}, અને ઉનાળુ સિઝનમાં ${getCropName(zId, "gu")} વાવો. અનુકૂળતા ${finalScore} ટકા છે.`
+        };
+
         candidates.push({
           pairKey: `${kId}_${rId}`,
-          kharif: k.name,
-          rabi: r.name,
-          zaid: z.name,
+          kharif: getCropName(kId),
+          rabi: getCropName(rId),
+          zaid: getCropName(zId),
           finalScore,
           goalTag,
-          reason: reasonText
+          reason: reasonText,
+          speechByLang
         });
       }
     }
@@ -274,6 +286,10 @@ function renderRotationCards() {
         </div>`
       : "";
 
+  latestRankedPlans = topThree; // <-- LANDMARK 3: Save active 3 cards for audio playback
+  const activeLang = typeof currentLang !== "undefined" ? currentLang : "en";
+  const listenText = (typeof LANG_STRINGS !== "undefined" && LANG_STRINGS[activeLang]?.listen) || "🔊 Listen to Plan";
+
   const container = document.getElementById("rotation-results");
   container.innerHTML =
     `<div style="grid-column: 1 / -1; color: #7dd3fc; font-size: 0.88rem; font-weight: 600;">
@@ -297,10 +313,19 @@ function renderRotationCards() {
             <div><strong>Zaid:</strong> ${item.zaid}</div>
           </div>
           <p class="reason-text">${item.reason}</p>
+          <!-- LANDMARK 4A: Speaker button inside each card -->
+          <button type="button" class="speak-btn" data-plan-idx="${idx}">${listenText}</button>
         </div>
       `;
       })
       .join("");
+
+  // LANDMARK 4B: Attach click events to the 3 speaker buttons
+  container.querySelectorAll(".speak-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      speakPlanCard(Number(btn.dataset.planIdx), btn);
+    });
+  });
 }
 
 //////////////////////////
@@ -562,6 +587,146 @@ async function resolveDistrictCoordinates(stateName, districtName) {
   return [22.5, 78.9]; //Geographic center of India as a last resort
 }
 
+let currentLang = "en";
+let latestRankedPlans = [];
+
+// Pre-warm browser voice list (Chrome loads voices asynchronously)
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+const CROP_VERNACULAR = {
+  bajra:     { en: "Pearl Millet (Bajra)", hi: "बाजरा", mr: "बाजरी", gu: "બાજરી" },
+  jowar:     { en: "Sorghum (Jowar)", hi: "ज्वार", mr: "ज्वारी", gu: "જુવાર" },
+  ragi:      { en: "Finger Millet (Ragi)", hi: "रागी", mr: "नाचणी", gu: "રાગી" },
+  maize:     { en: "Maize (Makka)", hi: "मक्का", mr: "मका", gu: "મકાઈ" },
+  rice:      { en: "Paddy (Rice)", hi: "धान", mr: "भात", gu: "ડાંગર" },
+  wheat:     { en: "Wheat (Gehun)", hi: "गेहूं", mr: "गहू", gu: "ઘઉં" },
+  soybean:   { en: "Soybean", hi: "सोयाबीन", mr: "सोयाबीन", gu: "સોયાબીન" },
+  tur:       { en: "Pigeon Pea (Tur)", hi: "अरहर तूर", mr: "तूर", gu: "તુવેર" },
+  moong:     { en: "Green Gram (Moong)", hi: "मूंग", mr: "मूग", gu: "મગ" },
+  urad:      { en: "Black Gram (Urad)", hi: "उड़द", mr: "उडीद", gu: "અડદ" },
+  chickpea:  { en: "Chickpea (Chana)", hi: "चना", mr: "हरभरा", gu: "ચણા" },
+  guar:      { en: "Cluster Bean (Guar)", hi: "ग्वार", mr: "गवार", gu: "ગવાર" },
+  moth:      { en: "Moth Bean", hi: "मोठ", mr: "मटकी", gu: "મઠ" },
+  groundnut: { en: "Groundnut", hi: "मूंगफली", mr: "भुईमूग", gu: "મગફળી" },
+  lentil:    { en: "Lentil (Masoor)", hi: "मसूर", mr: "मसूर", gu: "મસૂર" },
+  peas:      { en: "Field Pea (Matar)", hi: "मटर", mr: "वाटाणा", gu: "વટાણા" },
+  cotton:    { en: "Cotton (Kapas)", hi: "कपास", mr: "कापूस", gu: "કપાસ" },
+  mustard:   { en: "Mustard (Sarson)", hi: "सरसों", mr: "मोहरी", gu: "રાયડો" },
+  castor:    { en: "Castor (Arandi)", hi: "अरंडी", mr: "एरंडी", gu: "એરંડા" },
+  cumin:     { en: "Cumin (Jeera)", hi: "जीरा", mr: "जिरे", gu: "જીરું" },
+  safflower: { en: "Safflower (Kardi)", hi: "कुसुम", mr: "करडई", gu: "કસુંબી" },
+  sesame:    { en: "Sesame (Til)", hi: "तिल", mr: "तीळ", gu: "તલ" },
+  sunflower: { en: "Sunflower", hi: "सूरजमुखी", mr: "सूर्यफूल", gu: "સૂર્યમુખી" },
+  onion:     { en: "Onion (Pyaz)", hi: "प्याज", mr: "कांदा", gu: "ડુંગળી" },
+  potato:    { en: "Potato (Aloo)", hi: "आलू", mr: "बटाटा", gu: "બટાકા" },
+  fallow:    { en: "Soil-Moisture Fallow / Mulch", hi: "खाली खेत और पलवार", mr: "पडीक आणि आच्छादन", gu: "પડતર અને આચ્છાદન" }
+};
+
+const LANG_STRINGS = {
+  en: { locale: "en-IN", kharif: "Kharif", rabi: "Rabi", zaid: "Zaid", listen: "🔊 Listen to Plan", stop: "⏹️ Stop Audio" },
+  hi: { locale: "hi-IN", kharif: "खरीफ", rabi: "रबी", zaid: "जायद", listen: "🔊 सलाह सुनें", stop: "⏹️ आवाज बंद करें" },
+  mr: { locale: "mr-IN", kharif: "खरीप", rabi: "रब्बी", zaid: "उन्हाळी", listen: "🔊 सल्ला ऐका", stop: "⏹️ आवाज थांबवा" },
+  gu: { locale: "gu-IN", kharif: "ખરીફ", rabi: "રવિ", zaid: "ઉનાળુ", listen: "🔊 સલાહ સાંભળો", stop: "⏹️ અવાજ બંધ કરો" }
+};
+
+function getCropName(id, lang = currentLang) {
+  return CROP_VERNACULAR[id]?.[lang] || CROP_TRAITS[id]?.name || id;
+}
+
+// Convert English crop names into phonetic speech so "Tur" is spoken as "Toor", not spelled T-U-R
+function formatForEnglishSpeech(text) {
+  return text
+    .replace(/\(Tur\/Arhar\)|\(Tur\)/gi, ", Toor")
+    .replace(/\(Jowar\)/gi, ", Joh-waar")
+    .replace(/\(Bajra\)/gi, ", Baaj-ra")
+    .replace(/\(Urad\)/gi, ", Oorad")
+    .replace(/\(Guar\)/gi, ", Gwaar")
+    .replace(/\(([^)]+)\)/g, ", $1");
+}
+
+function speakPlanCard(planIndex, btnEl) {
+  if (!("speechSynthesis" in window)) {
+    alert("Audio readout is not supported on this browser.");
+    return;
+  }
+
+  const t = LANG_STRINGS[currentLang] || LANG_STRINGS.en;
+  const wasSpeakingThis = btnEl.classList.contains("speaking");
+
+  window.speechSynthesis.cancel();
+  document.querySelectorAll(".speak-btn").forEach((b) => {
+    b.classList.remove("speaking");
+    b.textContent = t.listen;
+  });
+
+  if (wasSpeakingThis) return;
+
+  const plan = latestRankedPlans[planIndex];
+  if (!plan) return;
+
+  // Match the best installed Indian voice on the device, with smart fallback
+  const voices = window.speechSynthesis.getVoices();
+  const langPrefix = t.locale.split("-")[0];
+  let chosenLang = currentLang;
+  let matchedVoice =
+    voices.find((v) => v.lang.toLowerCase() === t.locale.toLowerCase()) ||
+    voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
+
+  // If a desktop OS lacks Marathi/Gujarati voice packs, fall back to Hindi voice (or phonetic English)
+  if (!matchedVoice && (currentLang === "mr" || currentLang === "gu")) {
+    matchedVoice = voices.find((v) => v.lang.toLowerCase().startsWith("hi"));
+    chosenLang = matchedVoice ? "hi" : "en";
+  } else if (!matchedVoice && currentLang === "hi") {
+    chosenLang = "en";
+  }
+
+  const utterance = new SpeechSynthesisUtterance(plan.speechByLang[chosenLang] || plan.speechByLang.en);
+  utterance.lang = LANG_STRINGS[chosenLang].locale;
+  if (matchedVoice) utterance.voice = matchedVoice;
+  utterance.rate = 0.92;
+
+  btnEl.classList.add("speaking");
+  btnEl.textContent = t.stop;
+
+  utterance.onend = () => {
+    btnEl.classList.remove("speaking");
+    btnEl.textContent = t.listen;
+  };
+  utterance.onerror = () => {
+    btnEl.classList.remove("speaking");
+    btnEl.textContent = t.listen;
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+// Language button click handler
+document.querySelectorAll(".lang-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    document.querySelectorAll(".lang-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentLang = btn.dataset.lang;
+    syncPrevCropDropdown();
+    renderRotationCards();
+  });
+});
+
+document.querySelectorAll(".lang-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    document.querySelectorAll(".lang-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentLang = btn.dataset.lang;
+    applyLanguageUI();
+    syncPrevCropDropdown();
+    renderRotationCards();
+  });
+});
+
 const CROP_ICONS = {
   bajra: "🌾",
   jowar: "🌾",
@@ -605,7 +770,7 @@ function syncPrevCropDropdown() {
 
   cropGrid.innerHTML = uniqueIds
     .map((id) => {
-      const shortLabel = CROP_TRAITS[id].name.split("(")[0].trim();
+      const shortLabel = getCropName(id).split("(")[0].trim();
       const icon = CROP_ICONS[id] || "🌾";
       const isActive = id === selectedId ? "active" : "";
       return `

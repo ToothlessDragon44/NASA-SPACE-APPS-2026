@@ -16,7 +16,15 @@
  <body>
  <section id="planner" class="planner-section">
   <div class="planner-container">
-    <h2>Interactive Crop Rotation Planner</h2>
+    <div class="planner-header-bar">
+      <h2 id="planner-heading">Interactive Crop Rotation Planner</h2>
+      <div class="lang-switcher" role="group" aria-label="Select Language">
+        <button type="button" class="lang-btn active" data-lang="en">English</button>
+        <button type="button" class="lang-btn" data-lang="hi">हिंदी</button>
+        <button type="button" class="lang-btn" data-lang="mr">मराठी</button>
+        <button type="button" class="lang-btn" data-lang="gu">ગુજરાતી</button>
+      </div>
+    </div>
 
     <!-- MUST #1: Location Selector (Presets + Pan-India Map) -->
     <div class="location-bar">
