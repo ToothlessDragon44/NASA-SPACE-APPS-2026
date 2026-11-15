@@ -5,8 +5,8 @@ let currentState = {
   lat: 19.0948,
   lon: 74.7480,
   label: "Ahilyanagar, Maharashtra",
-  weather: null,
-  soil: null
+  weather: { annualRain: 565, marchHeat: 36.4, mayHeat: 40.2 },
+  soil: { rootWetness: 0.35, soilClass: "Loading..." }
 };
 
 // 1. Initialize Leaflet India Map
@@ -16,18 +16,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let activePin = L.marker([currentState.lat, currentState.lon]).addTo(map);
-
-// Add markers for the 3 hero focus districts
-SATELLITE_ANCHORS.slice(0, 3).forEach((anchor) => {
-  L.circleMarker([anchor.lat, anchor.lon], {
-    radius: 7,
-    color: "#38bdf8",
-    fillColor: "#0284c7",
-    fillOpacity: 0.9
-  })
-    .addTo(map)
-    .bindTooltip(anchor.name);
-});
 
 // 3. Live NASA POWER Climatology Fetch (with Offline Fallback)
 async function getNasaPowerWeather(lat, lon) {
@@ -68,16 +56,41 @@ async function fetchLiveRootWetness(lat, lon) {
   }
 }
 
-async function fetchRealSoilProfile(lat, lon) {
+// Instant 0ms Indian Soil-Zone Classifier (eliminates "Loading..." wait)
+function inferIndianSoilClass(lat, lon) {
+  if (lat >= 22.5 && lat <= 24.8 && lon >= 68.0 && lon <= 71.5) {
+    return "Arid Coastal / Saline Alluvial";
+  }
+  if (lat >= 24.5 && lat <= 30.0 && lon >= 69.5 && lon <= 75.5) {
+    return "Arid Sandy Loam (Desert Soil)";
+  }
+  if (lat >= 15.5 && lat <= 23.5 && lon >= 72.8 && lon <= 79.5) {
+    return "Black Cotton Soil (Vertisol)";
+  }
+  if (lat >= 24.5 && lat <= 31.5 && lon >= 75.5 && lon <= 88.5) {
+    return "Indo-Gangetic Alluvial Loam";
+  }
+  if (lat > 30.0 || (lat >= 26.5 && lon >= 88.0)) {
+    return "Sub-Montane / Tarai Loam";
+  }
+  return "Red & Lateritic Clay Loam";
+}
+
+// Fast 1.5s background refinement from ISRIC SoilGrids
+async function fetchRealSoilProfile(lat, lon, fallbackSoil) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 1500);
   const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${lon.toFixed(4)}&lat=${lat.toFixed(4)}&property=clay&property=sand&depth=0-5cm&value=mean`;
+
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
     const data = await res.json();
     const layers = data.properties.layers;
     const clayRaw = layers.find((l) => l.name === "clay")?.depths[0]?.values?.mean;
     const sandRaw = layers.find((l) => l.name === "sand")?.depths[0]?.values?.mean;
 
-    if (clayRaw == null || sandRaw == null) return "Regional Agricultural Loam";
+    if (clayRaw == null || sandRaw == null) return fallbackSoil;
     const clayPct = Math.round(clayRaw / 10);
     const sandPct = Math.round(sandRaw / 10);
 
@@ -85,76 +98,220 @@ async function fetchRealSoilProfile(lat, lon) {
     if (sandPct >= 60) return `Sandy Loam (${sandPct}% Sand)`;
     return `Balanced Loam (${clayPct}% Clay, ${sandPct}% Sand)`;
   } catch (err) {
-    return "Regional Agricultural Loam";
+    clearTimeout(timer);
+    return fallbackSoil;
   }
 }
-// 4. Score & Render Ranked 3-Season Rotation Cards
+// Resolve the active KVK calendar for the chosen State & District
+function getActiveKvkCalendar() {
+  const stateName = document.getElementById("state-select").value;
+  const districtName = document.getElementById("district-select").value;
+  const exactKey = `${stateName}|${districtName}`;
+
+  if (KVK_DISTRICT_CALENDARS[exactKey]) {
+    return {
+      sourceLabel: `KVK Calendar: ${KVK_DISTRICT_CALENDARS[exactKey].kvkName}`,
+      ...KVK_DISTRICT_CALENDARS[exactKey]
+    };
+  }
+  if (KVK_STATE_CALENDARS[stateName]) {
+    return {
+      sourceLabel: `ICAR State Agro-Climatic Calendar (${stateName})`,
+      ...KVK_STATE_CALENDARS[stateName]
+    };
+  }
+  // Custom map pin fallback: infer regional KVK crops from live rainfall
+  const isArid = currentState.weather.annualRain < 600;
+  return {
+    sourceLabel: isArid ? "ICAR Arid-Zone KVK Baseline" : "ICAR Sub-Humid KVK Baseline",
+    kharif: isArid ? ["bajra", "guar", "moong", "castor", "cotton"] : ["rice", "soybean", "maize", "tur"],
+    rabi:   isArid ? ["chickpea", "mustard", "cumin", "jowar"] : ["wheat", "chickpea", "mustard", "lentil"],
+    zaid:   ["moong", "fallow"]
+  };
+}
+
+// Dynamically build & score 3-season rotations strictly from that district's KVK crops
 function renderRotationCards() {
   const prevCrop = document.getElementById("prev-crop").value;
   const waterSource = document.querySelector('input[name="water-source"]:checked').value;
   const goal = document.getElementById("priority-goal").value;
   const { weather, soil } = currentState;
+  if (!weather || !soil) return;
 
-  const ranked = ROTATION_PATHWAYS.map((plan) => {
-    let score = plan.baseGaez;
+  const calendar = getActiveKvkCalendar();
+  const candidates = [];
 
-    // Monocrop break rule
-    if (plan.crops.includes(prevCrop)) score -= 32;
+  // Generate all valid (Kharif -> Rabi -> Zaid) triplets from the district's KVK list
+  for (const kId of calendar.kharif) {
+    for (const rId of calendar.rabi) {
+      for (const zId of calendar.zaid) {
+        const k = CROP_TRAITS[kId];
+        const r = CROP_TRAITS[rId];
+        const z = CROP_TRAITS[zId];
+        if (!k || !r || !z) continue;
 
-    // Water & SMAP root-zone moisture rules
-    if (waterSource === "rainfed" && plan.waterNeed === "high") score -= 35;
-    if (waterSource === "rainfed" && plan.waterNeed === "medium" && weather.annualRain < 500) score -= 18;
-    if (soil.rootWetness < 0.35 && plan.waterNeed !== "low") score -= 18;
+        let score = 74;
+        const reasons = [];
 
-    // Terminal heat stress rule (NASA POWER March T2M_MAX)
-    if (weather.marchHeat > 34.5 && plan.heatSensitive) score -= 22;
+        // 1. Rotate away from user's previous crop & avoid consecutive same-family crops
+        if (kId === prevCrop || rId === prevCrop || zId === prevCrop) {
+          score -= 35;
+        } else {
+          score += 6;
+        }
 
-    // Farmer priority goal weighting
-    if (goal === "water" && plan.waterNeed === "low") score += 14;
-    if (goal === "nitrogen" && plan.fixesNitrogen) score += 14;
-    if (goal === "resilience" && plan.droughtHardy) score += 14;
-    if (goal === "yield" && waterSource === "irrigated" && plan.waterNeed !== "low") score += 12;
+        if (
+          (k.family === r.family && k.family !== "none") ||
+          (r.family === z.family && r.family !== "none")
+        ) {
+          score -= 18; // Penalize consecutive cereals or consecutive legumes
+        } else if ((k.fixesN && !r.fixesN) || (!k.fixesN && r.fixesN)) {
+          score += 12; // Reward Cereal/Cash <-> Legume pairing
+          reasons.push("pairs nutrient feeder with nitrogen-fixing legume");
+        }
 
-    const finalScore = Math.max(35, Math.min(98, Math.round(score)));
+        // 2. Live NASA POWER Rainfall & Root-Zone Wetness Fit
+        const cropsInSeq = [k, r, z];
+        const highWaterCount = cropsInSeq.filter((c) => c.waterNeed === "high").length;
+        const medWaterCount = cropsInSeq.filter((c) => c.waterNeed === "medium").length;
 
-    let fitLabel = "Optimal Fit";
-    let fitClass = "fit-optimal";
-    if (finalScore < 65) {
-      fitLabel = "High Stress";
-      fitClass = "fit-stress";
-    } else if (finalScore < 80) {
-      fitLabel = "Moderate Fit";
-      fitClass = "fit-moderate";
+        if (waterSource === "rainfed") {
+          if (highWaterCount > 0) score -= 35 * highWaterCount;
+          if (weather.annualRain < 550 && medWaterCount > 0) score -= 14 * medWaterCount;
+          if (soil.rootWetness < 0.35 && r.waterNeed !== "low") score -= 15;
+          if (zId !== "fallow" && weather.annualRain < 750) score -= 18; // Rainfed drylands need summer fallow
+        } else {
+          if (highWaterCount > 0 && weather.annualRain >= 650) score += 6;
+        }
+
+        // 3. Live NASA POWER March Terminal Heat Stress Check
+        if (weather.marchHeat > 34.5 && (r.heatSensitive || z.heatSensitive)) {
+          score -= 18;
+        }
+
+        // 4. Primary Farmer Goal Weighting
+        let goalTag = "";
+        const nFixers = cropsInSeq.filter((c) => c.fixesN).length;
+        const totalCash = k.cashTier + r.cashTier + z.cashTier;
+
+        if (goal === "water") {
+          if (highWaterCount === 0 && medWaterCount === 0) {
+            score += 20;
+            goalTag = "💧 Ultra-Low Water Sequence";
+          } else if (highWaterCount === 0) {
+            score += 6;
+            goalTag = "💧 Moderate Water Use";
+          } else {
+            score -= 22;
+            goalTag = "⚠️ High Water Requirement";
+          }
+        } else if (goal === "nitrogen") {
+          if (nFixers >= 2) {
+            score += 24;
+            goalTag = "🌱 Dual Legume N-Restoration";
+          } else if (nFixers === 1) {
+            score += 12;
+            goalTag = "🌱 Single Legume N-Boost";
+          } else {
+            score -= 16;
+            goalTag = "⚠️ No Nitrogen-Fixing Crop";
+          }
+        } else if (goal === "resilience") {
+          if (k.droughtHardy && r.droughtHardy && !r.heatSensitive) {
+            score += 20;
+            goalTag = "🛡️ Heat & Drought Resilient";
+          } else {
+            score -= 12;
+            goalTag = "⚠️ Sensitive to Heat/Dry Spells";
+          }
+        } else if (goal === "yield") {
+          if (totalCash >= 6) {
+            score += 22;
+            goalTag = "📈 High-Value Cash & Yield";
+          } else if (totalCash >= 4) {
+            score += 10;
+            goalTag = "📈 Balanced Market Output";
+          } else {
+            score -= 10;
+            goalTag = "⚠️ Low-Input Subsistence";
+          }
+        }
+
+        const finalScore = Math.max(30, Math.min(99, Math.round(score)));
+        const reasonText = reasons.length
+          ? `Recommended from ${calendar.sourceLabel}: ${reasons[0]}, matching ${weather.annualRain} mm/yr rainfall and ${Math.round(soil.rootWetness * 100)}% root wetness.`
+          : `Selected from ${calendar.sourceLabel} to fit local soil texture and ${weather.marchHeat}°C March heat limits.`;
+
+        candidates.push({
+          pairKey: `${kId}_${rId}`,
+          kharif: k.name,
+          rabi: r.name,
+          zaid: z.name,
+          finalScore,
+          goalTag,
+          reason: reasonText
+        });
+      }
     }
+  }
 
-    return { ...plan, finalScore, fitLabel, fitClass };
-  })
-    .sort((a, b) => b.finalScore - a.finalScore)
-    .slice(0, 3);
+  // Sort highest score first and keep top 3 distinct Kharif-Rabi crop pairs
+  candidates.sort((a, b) => b.finalScore - a.finalScore);
+  const topThree = [];
+  const seenPairs = new Set();
+  for (const item of candidates) {
+    if (!seenPairs.has(item.pairKey)) {
+      seenPairs.add(item.pairKey);
+      topThree.push(item);
+    }
+    if (topThree.length === 3) break;
+  }
+
+  const aridBanner =
+    waterSource === "rainfed" && weather.annualRain < 450
+      ? `<div style="grid-column: 1 / -1; background: #451a03; border: 1px solid #d97706; color: #fde68a; padding: 0.65rem 0.9rem; border-radius: 6px; font-size: 0.85rem;">
+          ⚠️ <strong>Arid Rainfed Zone (${weather.annualRain} mm/yr):</strong> Low residual moisture restricts multi-cropping; drought-hardy Kharif crops + summer fallow are prioritized.
+        </div>`
+      : "";
 
   const container = document.getElementById("rotation-results");
-  container.innerHTML = ranked
-    .map(
-      (item, idx) => `
-      <div class="rotation-card">
-        <div class="card-header">
-          <span class="rank-tag">#${idx + 1} · GAEZ ${item.finalScore}%</span>
-          <span class="fit-badge ${item.fitClass}">${item.fitLabel}</span>
+  container.innerHTML =
+    `<div style="grid-column: 1 / -1; color: #7dd3fc; font-size: 0.88rem; font-weight: 600;">
+      Active Crop Pool: ${calendar.sourceLabel}
+    </div>` +
+    aridBanner +
+    topThree
+      .map((item, idx) => {
+        const fitLabel = item.finalScore >= 80 ? "Optimal Fit" : item.finalScore >= 65 ? "Moderate Fit" : "High Stress";
+        const fitClass = item.finalScore >= 80 ? "fit-optimal" : item.finalScore >= 65 ? "fit-moderate" : "fit-stress";
+        return `
+        <div class="rotation-card">
+          <div class="card-header">
+            <span class="rank-tag">#${idx + 1} · Suitability ${item.finalScore}%</span>
+            <span class="fit-badge ${fitClass}">${fitLabel}</span>
+          </div>
+          <div class="goal-pill">${item.goalTag}</div>
+          <div class="season-flow">
+            <div><strong>Kharif:</strong> ${item.kharif}</div>
+            <div><strong>Rabi:</strong> ${item.rabi}</div>
+            <div><strong>Zaid:</strong> ${item.zaid}</div>
+          </div>
+          <p class="reason-text">${item.reason}</p>
         </div>
-        <div class="season-flow">
-          <div><strong>Kharif:</strong> ${item.kharif}</div>
-          <div><strong>Rabi:</strong> ${item.rabi}</div>
-          <div><strong>Zaid:</strong> ${item.zaid}</div>
-        </div>
-        <p class="reason-text">${item.reason}</p>
-      </div>
-    `
-    )
-    .join("");
+      `;
+      })
+      .join("");
 }
 
-// 5. Update Location, Telemetry Strip & Cards Together
+//////////////////////////
+
+const LOCATION_CACHE = {};
+let latestRequestId = 0;
+
 async function selectLocation(lat, lon, customLabel = null) {
+  const reqId = ++latestRequestId;
+  const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+
   currentState.lat = lat;
   currentState.lon = lon;
   activePin.setLatLng([lat, lon]);
@@ -162,26 +319,68 @@ async function selectLocation(lat, lon, customLabel = null) {
 
   document.getElementById("coord-readout").textContent =
     `Selected: ${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E (${currentState.label})`;
+
+  // 1. Instant 0ms load using shallow clones so cached objects are never mutated
+  if (LOCATION_CACHE[cacheKey]) {
+    const cached = LOCATION_CACHE[cacheKey];
+    currentState.weather = { ...cached.weather };
+    currentState.soil = { ...cached.soil };
+    document.getElementById("tele-rain").textContent = `${cached.weather.annualRain} mm/yr`;
+    document.getElementById("tele-heat").textContent = `${cached.weather.marchHeat}°C / ${cached.weather.mayHeat}°C`;
+    document.getElementById("tele-smap").textContent = `${Math.round(cached.soil.rootWetness * 100)}% Root Wetness`;
+    document.getElementById("tele-soil").textContent = cached.soil.soilClass;
+    if (!document.getElementById("state-select").value) syncPrevCropDropdown();
+    renderRotationCards();
+    return;
+  }
+
+  // Fresh object per request prevents overwriting previous cache entries
+  const instantSoil = inferIndianSoilClass(lat, lon);
+  currentState.soil = { rootWetness: 0.35, soilClass: instantSoil };
+  document.getElementById("tele-soil").textContent = instantSoil;
   document.getElementById("tele-rain").textContent = "Loading...";
   document.getElementById("tele-heat").textContent = "Loading...";
   document.getElementById("tele-smap").textContent = "Loading...";
-  document.getElementById("tele-soil").textContent = "Loading...";
 
+  // 2. Progressive updates: render immediately as each API finishes
+  const weatherPromise = getNasaPowerWeather(lat, lon).then((weather) => {
+    if (reqId !== latestRequestId) return weather;
+    currentState.weather = weather;
+    document.getElementById("tele-rain").textContent = `${weather.annualRain} mm/yr`;
+    document.getElementById("tele-heat").textContent = `${weather.marchHeat}°C / ${weather.mayHeat}°C`;
+    if (!document.getElementById("state-select").value) syncPrevCropDropdown();
+    renderRotationCards();
+    return weather;
+  });
+
+  const wetnessPromise = fetchLiveRootWetness(lat, lon).then((rootWetness) => {
+    if (reqId !== latestRequestId) return rootWetness;
+    currentState.soil.rootWetness = rootWetness;
+    document.getElementById("tele-smap").textContent = `${Math.round(rootWetness * 100)}% Root Wetness`;
+    renderRotationCards();
+    return rootWetness;
+  });
+
+  const soilPromise = fetchRealSoilProfile(lat, lon, instantSoil).then((soilClass) => {
+  if (reqId !== latestRequestId) return soilClass;
+  currentState.soil.soilClass = soilClass;
+  document.getElementById("tele-soil").textContent = soilClass;
+  return soilClass;
+});
+
+  // 3. Save combined result into session cache once all 3 settle
   const [weather, rootWetness, soilClass] = await Promise.all([
-    getNasaPowerWeather(lat, lon),
-    fetchLiveRootWetness(lat, lon),
-    fetchRealSoilProfile(lat, lon)
+    weatherPromise,
+    wetnessPromise,
+    soilPromise
   ]);
 
-  currentState.weather = weather;
-  currentState.soil = { rootWetness, soilClass };
-
-  document.getElementById("tele-rain").textContent = `${weather.annualRain} mm/yr`;
-  document.getElementById("tele-heat").textContent = `${weather.marchHeat}°C / ${weather.mayHeat}°C`;
-  document.getElementById("tele-smap").textContent = `${Math.round(rootWetness * 100)}% Root Wetness`;
-  document.getElementById("tele-soil").textContent = soilClass;
-
-  renderRotationCards();
+  if (reqId === latestRequestId) {
+    LOCATION_CACHE[cacheKey] = {
+      weather,
+      soil: { rootWetness, soilClass }
+    };
+  }
 }
 
 const stateSelect = document.getElementById("state-select");
@@ -258,6 +457,20 @@ async function resolveDistrictCoordinates(stateName, districtName) {
   return [22.5, 78.9]; //Geographic center of India as a last resort
 }
 
+function syncPrevCropDropdown() {
+  const prevSelect = document.getElementById("prev-crop");
+  const currentVal = prevSelect.value;
+  const calendar = getActiveKvkCalendar();
+  const uniqueIds = [...new Set([...calendar.kharif, ...calendar.rabi, ...calendar.zaid])]
+    .filter((id) => id !== "fallow" && CROP_TRAITS[id]);
+
+  prevSelect.innerHTML = uniqueIds
+    .map((id) => `<option value="${id}">${CROP_TRAITS[id].name}</option>`)
+    .join("");
+
+  if (uniqueIds.includes(currentVal)) prevSelect.value = currentVal;
+}
+
 // 4. Event Listeners: State Change -> District Change -> Map Click
 stateSelect.addEventListener("change", () => {
   populateDistrictDropdown(stateSelect.value);
@@ -268,6 +481,7 @@ districtSelect.addEventListener("change", async () => {
   const districtName = districtSelect.value;
   if (!stateName || !districtName) return;
 
+  syncPrevCropDropdown();
   const [lat, lon] = await resolveDistrictCoordinates(stateName, districtName);
   map.flyTo([lat, lon], 8, { duration: 1.0 });
   selectLocation(lat, lon, `${districtName}, ${stateName}`);
@@ -285,4 +499,5 @@ document.getElementById("generate-btn").addEventListener("click", renderRotation
 // 5. Initial Default Load: Maharashtra -> Ahilyanagar
 stateSelect.value = "Maharashtra";
 populateDistrictDropdown("Maharashtra", "Ahilyanagar");
+syncPrevCropDropdown();
 selectLocation(19.0948, 74.7480, "Ahilyanagar, Maharashtra");

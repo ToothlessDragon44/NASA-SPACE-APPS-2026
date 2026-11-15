@@ -1,96 +1,124 @@
-const ROTATION_PATHWAYS = [
-  {
-    id: "jowar_chickpea",
-    kharif: "Sorghum (Jowar) [Jun–Oct]",
-    rabi: "Chickpea (Harbhara) [Oct–Feb]",
-    zaid: "Short Fallow / Mulch [Mar–May]",
-    crops: ["jowar", "chickpea"],
-    baseGaez: 86,
-    waterNeed: "low",
-    fixesNitrogen: true,
-    droughtHardy: true,
-    heatSensitive: false,
-    reason: "Chickpea fixes atmospheric nitrogen after cereal uptake and thrives on residual Vertisol moisture without summer irrigation."
+// 1. Agronomic Trait Matrix for KVK Crops
+const CROP_TRAITS = {
+  bajra:     { name: "Pearl Millet (Bajra)", family: "poaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 1 },
+  jowar:     { name: "Sorghum (Jowar)", family: "poaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 1 },
+  ragi:      { name: "Finger Millet (Ragi)", family: "poaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 1 },
+  maize:     { name: "Maize", family: "poaceae", waterNeed: "medium", fixesN: false, droughtHardy: false, heatSensitive: false, cashTier: 2 },
+  rice:      { name: "Paddy (Rice)", family: "poaceae", waterNeed: "high", fixesN: false, droughtHardy: false, heatSensitive: false, cashTier: 2 },
+  wheat:     { name: "Wheat", family: "poaceae", waterNeed: "high", fixesN: false, droughtHardy: false, heatSensitive: true, cashTier: 2 },
+  soybean:   { name: "Soybean", family: "fabaceae", waterNeed: "medium", fixesN: true, droughtHardy: false, heatSensitive: false, cashTier: 2 },
+  tur:       { name: "Pigeon Pea (Tur/Arhar)", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  moong:     { name: "Green Gram (Moong)", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  urad:      { name: "Black Gram (Urad)", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  chickpea:  { name: "Chickpea (Gram/Harbhara)", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  guar:      { name: "Cluster Bean (Guar)", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  moth:      { name: "Moth Bean", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: false, cashTier: 1 },
+  groundnut: { name: "Groundnut", family: "fabaceae", waterNeed: "medium", fixesN: true, droughtHardy: false, heatSensitive: false, cashTier: 3 },
+  lentil:    { name: "Lentil (Masoor)", family: "fabaceae", waterNeed: "low", fixesN: true, droughtHardy: true, heatSensitive: true, cashTier: 2 },
+  peas:      { name: "Field Pea", family: "fabaceae", waterNeed: "medium", fixesN: true, droughtHardy: false, heatSensitive: true, cashTier: 2 },
+  cotton:    { name: "Cotton", family: "malvaceae", waterNeed: "medium", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 3 },
+  mustard:   { name: "Indian Mustard", family: "brassicaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: true, cashTier: 2 },
+  castor:    { name: "Castor", family: "euphorbiaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 3 },
+  cumin:     { name: "Cumin (Jeera)", family: "apiaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: true, cashTier: 3 },
+  safflower: { name: "Safflower (Kardi)", family: "asteraceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  sesame:    { name: "Sesame (Til)", family: "pedaliaceae", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  sunflower: { name: "Sunflower", family: "asteraceae", waterNeed: "medium", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 2 },
+  onion:     { name: "Onion", family: "amaryllidaceae", waterNeed: "medium", fixesN: false, droughtHardy: false, heatSensitive: true, cashTier: 3 },
+  potato:    { name: "Potato", family: "solanaceae", waterNeed: "high", fixesN: false, droughtHardy: false, heatSensitive: true, cashTier: 3 },
+  fallow:    { name: "Soil-Moisture Fallow / Mulch", family: "none", waterNeed: "low", fixesN: false, droughtHardy: true, heatSensitive: false, cashTier: 0 }
+};
+
+// 2. District-Specific KVK Crop Calendars (Expandable with any "State|District" key)
+const KVK_DISTRICT_CALENDARS = {
+  "Maharashtra|Ahilyanagar": {
+    kvkName: "KVK Babhaleshwar & Dahigaon (Ahilyanagar)",
+    kharif: ["bajra", "soybean", "cotton", "tur", "moong", "urad", "maize"],
+    rabi:   ["jowar", "chickpea", "wheat", "safflower", "onion"],
+    zaid:   ["groundnut", "moong", "fallow"]
   },
-  {
-    id: "bajra_guar",
-    kharif: "Pearl Millet (Bajra) [Jul–Oct]",
-    rabi: "Cluster Bean (Guar) [Oct–Jan]",
-    zaid: "Arid Fallow [Feb–Jun]",
-    crops: ["bajra", "guar"],
-    baseGaez: 84,
-    waterNeed: "low",
-    fixesNitrogen: true,
-    droughtHardy: true,
-    heatSensitive: false,
-    reason: "Deep-rooted Bajra followed by nitrogen-fixing Guar tolerates low SMAP moisture (<0.12 m³/m³) and high arid wind stress."
+  "Maharashtra|Pune": {
+    kvkName: "KVK Baramati & Narayangaon (Pune)",
+    kharif: ["bajra", "soybean", "groundnut", "tur", "rice"],
+    rabi:   ["jowar", "chickpea", "wheat", "onion"],
+    zaid:   ["groundnut", "moong", "fallow"]
   },
-  {
-    id: "castor_moong",
-    kharif: "Castor (Semi-Arid) [Jul–Dec]",
-    rabi: "Relay Green Gram (Moong) [Jan–Mar]",
-    zaid: "Summer Fallow [Apr–Jun]",
-    crops: ["castor", "moong"],
-    baseGaez: 82,
-    waterNeed: "low",
-    fixesNitrogen: true,
-    droughtHardy: true,
-    heatSensitive: false,
-    reason: "Salt- and drought-tolerant Castor breaks cotton pest cycles while short-duration Moong restores topsoil organic nitrogen."
+  "Maharashtra|Nagpur": {
+    kvkName: "KVK CICR Nagpur",
+    kharif: ["cotton", "soybean", "tur", "rice", "maize"],
+    rabi:   ["chickpea", "wheat", "mustard", "linseed" in CROP_TRAITS ? "linseed" : "safflower"],
+    zaid:   ["moong", "groundnut", "fallow"]
   },
-  {
-    id: "soybean_sorghum",
-    kharif: "Soybean [Jun–Oct]",
-    rabi: "Rabi Sorghum (Jowar) [Oct–Feb]",
-    zaid: "Green Gram (Moong) [Mar–May]",
-    crops: ["soybean", "jowar", "moong"],
-    baseGaez: 85,
-    waterNeed: "medium",
-    fixesNitrogen: true,
-    droughtHardy: true,
-    heatSensitive: false,
-    reason: "Kharif Soybean enriches root-zone nitrogen for Rabi Sorghum, maximizing total annual biomass under moderate rainfall."
+  "Rajasthan|Jodhpur": {
+    kvkName: "ICAR-CAZRI KVK Jodhpur",
+    kharif: ["bajra", "guar", "moth", "moong", "sesame", "castor"],
+    rabi:   ["cumin", "mustard", "chickpea", "wheat"],
+    zaid:   ["moong", "fallow"]
   },
-  {
-    id: "bajra_mustard",
-    kharif: "Pearl Millet (Bajra) [Jul–Oct]",
-    rabi: "Indian Mustard [Oct–Feb]",
-    zaid: "Short Fallow [Mar–Jun]",
-    crops: ["bajra", "mustard"],
-    baseGaez: 81,
-    waterNeed: "medium",
-    fixesNitrogen: false,
-    droughtHardy: true,
-    heatSensitive: true,
-    reason: "Mustard requires minimal winter irrigation and delivers strong cash returns when March temperatures remain below 35°C."
+  "Rajasthan|Jaipur": {
+    kvkName: "KVK Chomu (Jaipur)",
+    kharif: ["bajra", "guar", "groundnut", "moong", "cowpea" in CROP_TRAITS ? "cowpea" : "urad"],
+    rabi:   ["wheat", "mustard", "chickpea", "peas"],
+    zaid:   ["moong", "fallow"]
   },
-  {
-    id: "groundnut_cumin",
-    kharif: "Groundnut [Jun–Oct]",
-    rabi: "Cumin (Jeera) [Nov–Feb]",
-    zaid: "Summer Fallow [Mar–May]",
-    crops: ["groundnut", "cumin"],
-    baseGaez: 80,
-    waterNeed: "medium",
-    fixesNitrogen: true,
-    droughtHardy: false,
-    heatSensitive: true,
-    reason: "Leguminous Groundnut improves sandy-loam structure ahead of high-value winter Cumin where light irrigation is available."
+  "Gujarat|Kachchh": {
+    kvkName: "KVK Mundra & Bhuj (Kachchh)",
+    kharif: ["cotton", "groundnut", "castor", "bajra", "moong", "guar"],
+    rabi:   ["cumin", "mustard", "wheat", "jowar"],
+    zaid:   ["bajra", "moong", "fallow"]
   },
-  {
-    id: "rice_wheat_moong",
-    kharif: "Paddy (Rice) [Jun–Oct]",
-    rabi: "Wheat [Nov–Mar]",
-    zaid: "Summer Moong [Apr–May]",
-    crops: ["rice", "wheat", "moong"],
-    baseGaez: 88,
-    waterNeed: "high",
-    fixesNitrogen: true,
-    droughtHardy: false,
-    heatSensitive: true,
-    reason: "Adding 60-day Zaid Moong between Rice and Wheat breaks continuous cereal monocropping and replenishes depleted soil nitrogen."
+  "Gujarat|Rajkot": {
+    kvkName: "KVK Targhadia (Rajkot)",
+    kharif: ["groundnut", "cotton", "soybean", "sesame", "tur"],
+    rabi:   ["chickpea", "wheat", "cumin", "onion"],
+    zaid:   ["moong", "sesame", "fallow"]
+  },
+  "Punjab|Ludhiana": {
+    kvkName: "KVK Samrala (Ludhiana)",
+    kharif: ["rice", "maize", "cotton", "moong"],
+    rabi:   ["wheat", "mustard", "potato", "peas"],
+    zaid:   ["moong", "maize", "fallow"]
   }
-];
+};
+
+// 3. State-Level ICAR / KVK Agro-Climatic Fallbacks (Covers all 36 States & UTs)
+const KVK_STATE_CALENDARS = {
+  "Andhra Pradesh": { kharif: ["rice", "cotton", "groundnut", "tur", "maize"], rabi: ["chickpea", "urad", "jowar", "sunflower"], zaid: ["moong", "sesame", "fallow"] },
+  "Arunachal Pradesh": { kharif: ["rice", "maize", "ragi", "soybean"], rabi: ["mustard", "wheat", "peas"], zaid: ["maize", "fallow"] },
+  "Assam": { kharif: ["rice", "urad", "sesame", "maize"], rabi: ["mustard", "lentil", "potato", "peas"], zaid: ["rice", "moong", "fallow"] },
+  "Bihar": { kharif: ["rice", "maize", "tur", "urad"], rabi: ["wheat", "lentil", "chickpea", "mustard", "potato"], zaid: ["moong", "maize", "fallow"] },
+  "Chhattisgarh": { kharif: ["rice", "soybean", "tur", "urad", "maize"], rabi: ["chickpea", "lentil", "wheat", "mustard"], zaid: ["moong", "groundnut", "fallow"] },
+  "Goa": { kharif: ["rice", "ragi", "groundnut"], rabi: ["urad", "moong", "groundnut"], zaid: ["moong", "fallow"] },
+  "Gujarat": { kharif: ["cotton", "groundnut", "castor", "bajra", "tur"], rabi: ["wheat", "cumin", "chickpea", "mustard"], zaid: ["moong", "bajra", "fallow"] },
+  "Haryana": { kharif: ["rice", "cotton", "bajra", "guar", "maize"], rabi: ["wheat", "mustard", "chickpea"], zaid: ["moong", "fallow"] },
+  "Himachal Pradesh": { kharif: ["maize", "rice", "urad", "soybean"], rabi: ["wheat", "peas", "mustard", "lentil"], zaid: ["potato", "fallow"] },
+  "Jharkhand": { kharif: ["rice", "maize", "tur", "urad", "ragi"], rabi: ["chickpea", "lentil", "wheat", "mustard"], zaid: ["moong", "fallow"] },
+  "Karnataka": { kharif: ["ragi", "maize", "tur", "cotton", "soybean", "groundnut"], rabi: ["jowar", "chickpea", "sunflower", "safflower"], zaid: ["moong", "groundnut", "fallow"] },
+  "Kerala": { kharif: ["rice", "sesame", "urad"], rabi: ["rice", "moong", "groundnut"], zaid: ["moong", "fallow"] },
+  "Madhya Pradesh": { kharif: ["soybean", "maize", "tur", "urad", "cotton"], rabi: ["wheat", "chickpea", "lentil", "mustard"], zaid: ["moong", "fallow"] },
+  "Maharashtra": { kharif: ["soybean", "cotton", "tur", "bajra", "rice"], rabi: ["jowar", "chickpea", "wheat", "safflower"], zaid: ["groundnut", "moong", "fallow"] },
+  "Manipur": { kharif: ["rice", "maize", "soybean", "urad"], rabi: ["mustard", "peas", "lentil", "potato"], zaid: ["maize", "fallow"] },
+  "Meghalaya": { kharif: ["rice", "maize", "soybean"], rabi: ["mustard", "potato", "peas"], zaid: ["maize", "fallow"] },
+  "Mizoram": { kharif: ["rice", "maize", "soybean", "sesame"], rabi: ["mustard", "peas", "lentil"], zaid: ["maize", "fallow"] },
+  "Nagaland": { kharif: ["rice", "maize", "soybean", "tur"], rabi: ["mustard", "peas", "lentil"], zaid: ["maize", "fallow"] },
+  "Odisha": { kharif: ["rice", "tur", "urad", "groundnut", "maize"], rabi: ["moong", "urad", "mustard", "groundnut"], zaid: ["moong", "sesame", "fallow"] },
+  "Punjab": { kharif: ["rice", "cotton", "maize", "moong"], rabi: ["wheat", "mustard", "potato", "peas"], zaid: ["moong", "maize", "fallow"] },
+  "Rajasthan": { kharif: ["bajra", "guar", "moong", "moth", "soybean"], rabi: ["wheat", "mustard", "chickpea", "cumin"], zaid: ["moong", "fallow"] },
+  "Sikkim": { kharif: ["maize", "rice", "ragi", "soybean"], rabi: ["mustard", "wheat", "peas", "potato"], zaid: ["potato", "fallow"] },
+  "Tamil Nadu": { kharif: ["rice", "bajra", "groundnut", "cotton", "tur"], rabi: ["jowar", "urad", "moong", "sesame"], zaid: ["moong", "groundnut", "fallow"] },
+  "Telangana": { kharif: ["rice", "cotton", "maize", "tur", "soybean"], rabi: ["chickpea", "groundnut", "jowar", "sunflower"], zaid: ["moong", "sesame", "fallow"] },
+  "Tripura": { kharif: ["rice", "maize", "urad", "sesame"], rabi: ["mustard", "potato", "lentil", "peas"], zaid: ["rice", "moong", "fallow"] },
+  "Uttar Pradesh": { kharif: ["rice", "maize", "bajra", "tur", "urad"], rabi: ["wheat", "mustard", "chickpea", "lentil", "potato"], zaid: ["moong", "urad", "fallow"] },
+  "Uttarakhand": { kharif: ["rice", "ragi", "soybean", "maize"], rabi: ["wheat", "lentil", "mustard", "peas"], zaid: ["moong", "potato", "fallow"] },
+  "West Bengal": { kharif: ["rice", "maize", "urad", "tur"], rabi: ["potato", "mustard", "lentil", "wheat"], zaid: ["rice", "moong", "sesame", "fallow"] },
+  "Andaman and Nicobar Islands": { kharif: ["rice", "maize", "urad"], rabi: ["moong", "groundnut"], zaid: ["fallow"] },
+  "Chandigarh": { kharif: ["rice", "maize"], rabi: ["wheat", "mustard"], zaid: ["moong", "fallow"] },
+  "Dadra and Nagar Haveli and Daman and Diu": { kharif: ["rice", "ragi", "tur"], rabi: ["chickpea", "wheat"], zaid: ["moong", "fallow"] },
+  "Delhi": { kharif: ["bajra", "jowar", "maize"], rabi: ["wheat", "mustard", "chickpea"], zaid: ["moong", "fallow"] },
+  "Jammu and Kashmir": { kharif: ["rice", "maize", "urad"], rabi: ["wheat", "mustard", "peas"], zaid: ["potato", "fallow"] },
+  "Ladakh": { kharif: ["wheat", "peas", "potato"], rabi: ["fallow"], zaid: ["fallow"] },
+  "Lakshadweep": { kharif: ["maize", "moong"], rabi: ["urad", "fallow"], zaid: ["fallow"] },
+  "Puducherry": { kharif: ["rice", "groundnut", "cotton"], rabi: ["urad", "moong", "sesame"], zaid: ["moong", "fallow"] }
+};
 
 const EXACT_DISTRICT_COORDS = {
   "Maharashtra|Ahilyanagar": [19.0948, 74.7480],
