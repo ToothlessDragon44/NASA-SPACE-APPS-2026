@@ -1,3 +1,25 @@
+import json, os, math
+import ee, requests
+from datetime import date
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+gee_key = os.environ.get("GEE_KEY_JSON")
+if gee_key:
+    info = json.loads(gee_key)
+    creds = ee.ServiceAccountCredentials(info["client_email"], key_data=gee_key)
+    ee.Initialize(creds, project=info["project_id"])
+else:
+    ee.Initialize(project="custom-rampart-470805-f6")
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 import math
 import ee, requests
 from datetime import date
