@@ -305,6 +305,101 @@ function renderRotationCards() {
 
 //////////////////////////
 
+// Translate raw NASA weather & soil numbers into plain-language farmer guidance
+function updateFarmConditionUI({ weatherLoaded = true, moistureLoaded = true } = {}) {
+  const { weather, soil } = currentState;
+
+  // 1. Rainfall & Water Security
+  const rainStatusEl = document.getElementById("farmer-rain-status");
+  const rainNoteEl = document.getElementById("farmer-rain-note");
+  if (!weatherLoaded) {
+    rainStatusEl.className = "status-pill status-loading";
+    rainStatusEl.textContent = "Checking...";
+    rainNoteEl.textContent = "Checking seasonal rainfall pattern for your area...";
+  } else if (weather.annualRain < 500) {
+    rainStatusEl.className = "status-pill status-alert";
+    rainStatusEl.textContent = "Low Rainfall";
+    rainNoteEl.textContent = "Dry zone — choose drought-hardy millets or pulses unless you have well/canal irrigation.";
+  } else if (weather.annualRain < 900) {
+    rainStatusEl.className = "status-pill status-warn";
+    rainStatusEl.textContent = "Moderate Rain";
+    rainNoteEl.textContent = "Supports one reliable Kharif crop; winter Rabi sowing needs residual soil moisture or light watering.";
+  } else {
+    rainStatusEl.className = "status-pill status-good";
+    rainStatusEl.textContent = "Good Monsoon";
+    rainNoteEl.textContent = "Strong rainfall supports water-loving Kharif crops and good post-monsoon soil recharge.";
+  }
+
+  // 2. Spring & Summer Heat Risk (March grain-filling check)
+  const heatStatusEl = document.getElementById("farmer-heat-status");
+  const heatNoteEl = document.getElementById("farmer-heat-note");
+  if (!weatherLoaded) {
+    heatStatusEl.className = "status-pill status-loading";
+    heatStatusEl.textContent = "Checking...";
+    heatNoteEl.textContent = "Checking afternoon heat risk during grain filling...";
+  } else if (weather.marchHeat > 34.5) {
+    heatStatusEl.className = "status-pill status-alert";
+    heatStatusEl.textContent = "Early Heat Risk";
+    heatNoteEl.textContent = "Hot March afternoons can shrivel late winter grain; sow early or choose heat-tolerant crops.";
+  } else if (weather.marchHeat > 31.5) {
+    heatStatusEl.className = "status-pill status-warn";
+    heatStatusEl.textContent = "Warm Spring";
+    heatNoteEl.textContent = "Moderate March warmth — timely Rabi sowing helps grain mature before peak afternoon heat.";
+  } else {
+    heatStatusEl.className = "status-pill status-good";
+    heatStatusEl.textContent = "Mild Spring";
+    heatNoteEl.textContent = "Cool March temperatures protect winter crops during grain filling with low heat stress.";
+  }
+
+  // 3. Current Subsoil Moisture (from NASA GWETROOT)
+  const moistStatusEl = document.getElementById("farmer-moisture-status");
+  const moistNoteEl = document.getElementById("farmer-moisture-note");
+  if (!moistureLoaded) {
+    moistStatusEl.className = "status-pill status-loading";
+    moistStatusEl.textContent = "Checking...";
+    moistNoteEl.textContent = "Checking root-zone dampness for seed germination...";
+  } else if (soil.rootWetness < 0.35) {
+    moistStatusEl.className = "status-pill status-alert";
+    moistStatusEl.textContent = "Dry Root Zone";
+    moistNoteEl.textContent = "Subsoil is currently dry — pre-sowing watering or waiting for rain is needed before sowing.";
+  } else if (soil.rootWetness < 0.60) {
+    moistStatusEl.className = "status-pill status-warn";
+    moistStatusEl.textContent = "Moderate Moisture";
+    moistNoteEl.textContent = "Enough dampness in the root zone for hardy pulses, millets, and deep-rooted crops.";
+  } else {
+    moistStatusEl.className = "status-pill status-good";
+    moistStatusEl.textContent = "Well Moistened";
+    moistNoteEl.textContent = "Root zone holds strong moisture — seeds can germinate reliably without immediate watering.";
+  }
+
+  // 4. Soil Behavior & Water Retention
+  const soilStatusEl = document.getElementById("farmer-soil-status");
+  const soilNoteEl = document.getElementById("farmer-soil-note");
+  const s = (soil.soilClass || "").toLowerCase();
+
+  if (s.includes("black") || s.includes("clay")) {
+    soilStatusEl.className = "status-pill status-good";
+    soilStatusEl.textContent = "Holds Water Well";
+    soilNoteEl.textContent = "Heavy black/clay soil retains monsoon moisture into winter, but drains slowly if over-watered.";
+  } else if (s.includes("sandy")) {
+    soilStatusEl.className = "status-pill status-warn";
+    soilStatusEl.textContent = "Fast-Draining Soil";
+    soilNoteEl.textContent = "Light sandy soil is easy to plow but dries quickly — benefits from organic mulch and light, frequent watering.";
+  } else if (s.includes("alluvial")) {
+    soilStatusEl.className = "status-pill status-good";
+    soilStatusEl.textContent = "Fertile Easy Loam";
+    soilNoteEl.textContent = "Deep, fertile alluvial soil supports multi-season cropping with balanced drainage and moisture retention.";
+  } else if (s.includes("tarai") || s.includes("montane")) {
+    soilStatusEl.className = "status-pill status-good";
+    soilStatusEl.textContent = "Rich Foothill Soil";
+    soilNoteEl.textContent = "Organic-rich foothill loam holds steady moisture; pair with cool-tolerant winter crops.";
+  } else {
+    soilStatusEl.className = "status-pill status-good";
+    soilStatusEl.textContent = "Well-Drained Loam";
+    soilNoteEl.textContent = "Drains excess monsoon rain easily without waterlogging; legumes and compost boost fertility.";
+  }
+}
+
 const LOCATION_CACHE = {};
 let latestRequestId = 0;
 
@@ -320,7 +415,7 @@ async function selectLocation(lat, lon, customLabel = null) {
   document.getElementById("coord-readout").textContent =
     `Selected: ${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E (${currentState.label})`;
 
-  // 1. Instant 0ms load using shallow clones so cached objects are never mutated
+  // 1. Instant 0ms load from session cache
   if (LOCATION_CACHE[cacheKey]) {
     const cached = LOCATION_CACHE[cacheKey];
     currentState.weather = { ...cached.weather };
@@ -329,25 +424,33 @@ async function selectLocation(lat, lon, customLabel = null) {
     document.getElementById("tele-heat").textContent = `${cached.weather.marchHeat}°C / ${cached.weather.mayHeat}°C`;
     document.getElementById("tele-smap").textContent = `${Math.round(cached.soil.rootWetness * 100)}% Root Wetness`;
     document.getElementById("tele-soil").textContent = cached.soil.soilClass;
+    updateFarmConditionUI({ weatherLoaded: true, moistureLoaded: true });
     if (!document.getElementById("state-select").value) syncPrevCropDropdown();
     renderRotationCards();
     return;
   }
 
-  // Fresh object per request prevents overwriting previous cache entries
+  // 2. Immediate 0ms soil classification + loading state for live weather/wetness
   const instantSoil = inferIndianSoilClass(lat, lon);
   currentState.soil = { rootWetness: 0.35, soilClass: instantSoil };
-  document.getElementById("tele-soil").textContent = instantSoil;
+
   document.getElementById("tele-rain").textContent = "Loading...";
   document.getElementById("tele-heat").textContent = "Loading...";
   document.getElementById("tele-smap").textContent = "Loading...";
+  document.getElementById("tele-soil").textContent = instantSoil;
+  updateFarmConditionUI({ weatherLoaded: false, moistureLoaded: false });
 
-  // 2. Progressive updates: render immediately as each API finishes
+  let weatherDone = false;
+  let moistureDone = false;
+
+  // 3. Progressive updates as each API resolves
   const weatherPromise = getNasaPowerWeather(lat, lon).then((weather) => {
     if (reqId !== latestRequestId) return weather;
+    weatherDone = true;
     currentState.weather = weather;
     document.getElementById("tele-rain").textContent = `${weather.annualRain} mm/yr`;
     document.getElementById("tele-heat").textContent = `${weather.marchHeat}°C / ${weather.mayHeat}°C`;
+    updateFarmConditionUI({ weatherLoaded: weatherDone, moistureLoaded: moistureDone });
     if (!document.getElementById("state-select").value) syncPrevCropDropdown();
     renderRotationCards();
     return weather;
@@ -355,20 +458,22 @@ async function selectLocation(lat, lon, customLabel = null) {
 
   const wetnessPromise = fetchLiveRootWetness(lat, lon).then((rootWetness) => {
     if (reqId !== latestRequestId) return rootWetness;
+    moistureDone = true;
     currentState.soil.rootWetness = rootWetness;
     document.getElementById("tele-smap").textContent = `${Math.round(rootWetness * 100)}% Root Wetness`;
+    updateFarmConditionUI({ weatherLoaded: weatherDone, moistureLoaded: moistureDone });
     renderRotationCards();
     return rootWetness;
   });
 
   const soilPromise = fetchRealSoilProfile(lat, lon, instantSoil).then((soilClass) => {
-  if (reqId !== latestRequestId) return soilClass;
-  currentState.soil.soilClass = soilClass;
-  document.getElementById("tele-soil").textContent = soilClass;
-  return soilClass;
-});
+    if (reqId !== latestRequestId) return soilClass;
+    currentState.soil.soilClass = soilClass;
+    document.getElementById("tele-soil").textContent = soilClass;
+    updateFarmConditionUI({ weatherLoaded: weatherDone, moistureLoaded: moistureDone });
+    return soilClass;
+  });
 
-  // 3. Save combined result into session cache once all 3 settle
   const [weather, rootWetness, soilClass] = await Promise.all([
     weatherPromise,
     wetnessPromise,
@@ -457,19 +562,80 @@ async function resolveDistrictCoordinates(stateName, districtName) {
   return [22.5, 78.9]; //Geographic center of India as a last resort
 }
 
+const CROP_ICONS = {
+  bajra: "🌾",
+  jowar: "🌾",
+  ragi: "🌿",
+  maize: "🌽",
+  rice: "🌾",
+  wheat: "🌾",
+  soybean: "🫘",
+  tur: "🫘",
+  moong: "🫛",
+  urad: "🫛",
+  chickpea: "🫘",
+  guar: "🫛",
+  moth: "🫘",
+  groundnut: "🥜",
+  lentil: "🫘",
+  peas: "🫛",
+  cotton: "☁️",
+  mustard: "🌼",
+  castor: "🌱",
+  cumin: "🌿",
+  safflower: "🌻",
+  sesame: "🌱",
+  sunflower: "🌻",
+  onion: "🧅",
+  potato: "🥔"
+};
+
 function syncPrevCropDropdown() {
-  const prevSelect = document.getElementById("prev-crop");
-  const currentVal = prevSelect.value;
+  const prevInput = document.getElementById("prev-crop");
+  const cropGrid = document.getElementById("prev-crop-grid");
+  if (!prevInput || !cropGrid) return;
+
   const calendar = getActiveKvkCalendar();
   const uniqueIds = [...new Set([...calendar.kharif, ...calendar.rabi, ...calendar.zaid])]
     .filter((id) => id !== "fallow" && CROP_TRAITS[id]);
 
-  prevSelect.innerHTML = uniqueIds
-    .map((id) => `<option value="${id}">${CROP_TRAITS[id].name}</option>`)
+  // Preserve current choice if valid in this district; otherwise select the first local crop
+  const selectedId = uniqueIds.includes(prevInput.value) ? prevInput.value : uniqueIds[0];
+  prevInput.value = selectedId;
+
+  cropGrid.innerHTML = uniqueIds
+    .map((id) => {
+      const shortLabel = CROP_TRAITS[id].name.split("(")[0].trim();
+      const icon = CROP_ICONS[id] || "🌾";
+      const isActive = id === selectedId ? "active" : "";
+      return `
+        <button type="button" class="visual-tile crop-tile ${isActive}" data-crop="${id}">
+          <span class="tile-icon">${icon}</span>
+          <span class="tile-title">${shortLabel}</span>
+        </button>
+      `;
+    })
     .join("");
 
-  if (uniqueIds.includes(currentVal)) prevSelect.value = currentVal;
+  cropGrid.querySelectorAll(".crop-tile").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      cropGrid.querySelectorAll(".crop-tile").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      prevInput.value = btn.dataset.crop;
+      renderRotationCards();
+    });
+  });
 }
+
+// Wire up Visual Farmer Goal tap tiles
+document.querySelectorAll(".goal-tile").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".goal-tile").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("priority-goal").value = btn.dataset.goal;
+    renderRotationCards();
+  });
+});
 
 // 4. Event Listeners: State Change -> District Change -> Map Click
 stateSelect.addEventListener("change", () => {
@@ -495,6 +661,110 @@ map.on("click", (e) => {
 });
 
 document.getElementById("generate-btn").addEventListener("click", renderRotationCards);
+
+// Reverse-geocode GPS coordinates to auto-select the matching State & District KVK calendar
+async function syncDropdownsFromGps(lat, lon) {
+  try {
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+
+    const rawState = (data.principalSubdivision || "").trim();
+    const matchedState = Object.keys(INDIA_STATE_DISTRICTS).find(
+      (s) => s.toLowerCase() === rawState.toLowerCase()
+    );
+
+    if (!matchedState) return null;
+
+    // Auto-select State and unlock District dropdown
+    stateSelect.value = matchedState;
+    populateDistrictDropdown(matchedState);
+
+    // Collect all administrative names returned for this coordinate
+    const adminNames = [
+      data.city,
+      data.locality,
+      ...(data.localityInfo?.administrative || []).map((a) => a.name)
+    ]
+      .filter(Boolean)
+      .map((n) => n.toLowerCase().replace(/\s+district$/i, "").trim());
+
+    // Handle historical district rename (Ahmednagar -> Ahilyanagar)
+    if (adminNames.some((n) => n.includes("ahmednagar"))) {
+      adminNames.push("ahilyanagar");
+    }
+
+    const matchedDistrict = INDIA_STATE_DISTRICTS[matchedState].find((dist) =>
+      adminNames.some((admin) => admin === dist.toLowerCase() || admin.includes(dist.toLowerCase()))
+    );
+
+    if (matchedDistrict) {
+      districtSelect.value = matchedDistrict;
+      syncPrevCropDropdown();
+      return `My Farm · ${matchedDistrict}, ${matchedState}`;
+    }
+
+    syncPrevCropDropdown();
+    return `My Farm · ${matchedState}`;
+  } catch (err) {
+    return null;
+  }
+}
+
+// One-Tap "Locate My Farm" GPS Handler
+const gpsBtn = document.getElementById("gps-locate-btn");
+if (gpsBtn) {
+  gpsBtn.addEventListener("click", () => {
+    const readout = document.getElementById("coord-readout");
+
+    if (!navigator.geolocation) {
+      readout.textContent = "GPS not supported on this device — please choose your State & District.";
+      return;
+    }
+
+    gpsBtn.disabled = true;
+    gpsBtn.textContent = "⏳ Finding Your Field...";
+    readout.textContent = "Requesting GPS signal from your device...";
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+
+        // Guard against non-Indian VPNs or out-of-bounds test coordinates
+        if (lat < 6.5 || lat > 37.5 || lon < 68.0 || lon > 97.5) {
+          gpsBtn.disabled = false;
+          gpsBtn.textContent = "📍 Locate My Farm (GPS)";
+          readout.textContent = "Detected location is outside India — please select an Indian State & District.";
+          return;
+        }
+
+        // Reset dropdowns before auto-matching detected State/District
+        stateSelect.value = "";
+        populateDistrictDropdown("");
+
+        const farmLabel = await syncDropdownsFromGps(lat, lon);
+        map.flyTo([lat, lon], 12, { duration: 1.1 });
+        await selectLocation(lat, lon, farmLabel || `My Farm (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`);
+
+        gpsBtn.disabled = false;
+        gpsBtn.textContent = "📍 Locate My Farm (GPS)";
+      },
+      (err) => {
+        gpsBtn.disabled = false;
+        gpsBtn.textContent = "📍 Locate My Farm (GPS)";
+
+        if (err.code === err.PERMISSION_DENIED) {
+          readout.textContent = "Location permission denied — please select your State & District manually.";
+        } else {
+          readout.textContent = "Weak GPS signal indoors — please select your State & District manually.";
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  });
+}
 
 // 5. Initial Default Load: Maharashtra -> Ahilyanagar
 stateSelect.value = "Maharashtra";

@@ -20,6 +20,9 @@
 
     <!-- MUST #1: Location Selector (Presets + Pan-India Map) -->
     <div class="location-bar">
+        <button type="button" id="gps-locate-btn" class="gps-btn">
+        📍 Locate My Farm (GPS)
+      </button>
       <!-- REPLACE .preset-buttons INSIDE .location-bar WITH THIS -->
 <div class="cascade-selectors">
   <div class="select-group">
@@ -44,58 +47,124 @@
 
       <!-- MUST #2: 3 Farmer Context Controls -->
       <div class="controls-card">
-        <label for="prev-crop">Previous / Current Crop</label>
-        <select id="prev-crop">
-          <option value="cotton">Cotton</option>
-          <option value="sugarcane">Sugarcane</option>
-          <option value="bajra">Pearl Millet (Bajra)</option>
-          <option value="groundnut">Groundnut</option>
-          <option value="soybean">Soybean</option>
-          <option value="rice">Paddy (Rice)</option>
-          <option value="wheat">Wheat</option>
-        </select>
-
-        <label>Water Source</label>
-        <div class="radio-group">
-          <label><input type="radio" name="water-source" value="rainfed" checked /> Rainfed</label>
-          <label><input type="radio" name="water-source" value="irrigated" /> Irrigated</label>
+        <!-- 1. Visual Previous Crop Selector (Populated dynamically from KVK District Calendar) -->
+        <div class="control-block">
+          <label>1. What did you grow last season?</label>
+          <input type="hidden" id="prev-crop" value="bajra" />
+          <div id="prev-crop-grid" class="visual-tile-grid crop-grid"></div>
         </div>
 
-        <label for="priority-goal">Primary Farmer Goal</label>
-        <select id="priority-goal">
-          <option value="water">Conserve Water</option>
-          <option value="nitrogen">Restore Soil Nitrogen</option>
-          <option value="resilience">Drought & Heat Resilience</option>
-          <option value="yield">Maximize Yield</option>
-        </select>
+        <!-- 2. Visual Water Source Selector -->
+        <div class="control-block">
+          <label>2. How is your field watered?</label>
+          <div class="visual-tile-grid two-col">
+            <label class="water-tile">
+              <input type="radio" name="water-source" value="rainfed" checked />
+              <span class="tile-icon">🌧️</span>
+              <span class="tile-title">Rainfed</span>
+              <span class="tile-sub">Monsoon rain only</span>
+            </label>
+            <label class="water-tile">
+              <input type="radio" name="water-source" value="irrigated" />
+              <span class="tile-icon">💧</span>
+              <span class="tile-title">Irrigated</span>
+              <span class="tile-sub">Well, borewell or canal</span>
+            </label>
+          </div>
+        </div>
 
-        <button type="button" id="generate-btn" class="primary-btn">Generate Rotation Plan</button>
+        <!-- 3. Visual Primary Farmer Goal Selector -->
+        <div class="control-block">
+          <label>3. What is your main goal this year?</label>
+          <input type="hidden" id="priority-goal" value="water" />
+          <div id="goal-tile-grid" class="visual-tile-grid two-col">
+            <button type="button" class="visual-tile goal-tile active" data-goal="water">
+              <span class="tile-icon">💧</span>
+              <span class="tile-title">Save Water</span>
+              <span class="tile-sub">Low watering need</span>
+            </button>
+            <button type="button" class="visual-tile goal-tile" data-goal="nitrogen">
+              <span class="tile-icon">🌱</span>
+              <span class="tile-title">Enrich Soil</span>
+              <span class="tile-sub">Natural nitrogen boost</span>
+            </button>
+            <button type="button" class="visual-tile goal-tile" data-goal="resilience">
+              <span class="tile-icon">🛡️</span>
+              <span class="tile-title">Beat Heat & Drought</span>
+              <span class="tile-sub">Safe in dry spells</span>
+            </button>
+            <button type="button" class="visual-tile goal-tile" data-goal="yield">
+              <span class="tile-icon">💰</span>
+              <span class="tile-title">Higher Income</span>
+              <span class="tile-sub">Best market value</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" id="generate-btn" class="primary-btn">Show Best Crop Rotation</button>
       </div>
     </div>
 
-    <!-- MUST #3: Live Climate & Soil Telemetry Strip -->
-    <div class="telemetry-strip">
-      <div class="tele-box">
-        <span class="tele-label">Annual Rainfall (NASA POWER)</span>
-        <strong id="tele-rain">-- mm</strong>
+ <!-- 1. Plain-Language Field Conditions -->
+    <div class="farmer-telemetry-strip">
+      <div class="farm-card">
+        <div class="farm-card-top">
+          <span class="farm-card-title">Monsoon & Rain Outlook</span>
+          <span id="farmer-rain-status" class="status-pill status-loading">Checking...</span>
+        </div>
+        <p id="farmer-rain-note" class="farm-note">Checking seasonal rainfall pattern for your area...</p>
       </div>
-      <div class="tele-box">
-        <span class="tele-label">Mar / May Peak Heat</span>
-        <strong id="tele-heat">-- °C</strong>
+
+      <div class="farm-card">
+        <div class="farm-card-top">
+          <span class="farm-card-title">Spring & Summer Heat</span>
+          <span id="farmer-heat-status" class="status-pill status-loading">Checking...</span>
+        </div>
+        <p id="farmer-heat-note" class="farm-note">Checking afternoon heat risk during grain filling...</p>
       </div>
-      <div class="tele-box">
-        <span class="tele-label">Root-Zone Moisture (SMAP)</span>
-        <strong id="tele-smap">-- m³/m³</strong>
+
+      <div class="farm-card">
+        <div class="farm-card-top">
+          <span class="farm-card-title">Subsoil Moisture Now</span>
+          <span id="farmer-moisture-status" class="status-pill status-loading">Checking...</span>
+        </div>
+        <p id="farmer-moisture-note" class="farm-note">Checking root-zone dampness for seed germination...</p>
       </div>
-      <div class="tele-box">
-        <span class="tele-label">Local Soil Profile</span>
-        <strong id="tele-soil">--</strong>
+
+      <div class="farm-card">
+        <div class="farm-card-top">
+          <span class="farm-card-title">Soil Behavior</span>
+          <span id="farmer-soil-status" class="status-pill status-good">Ready</span>
+        </div>
+        <p id="farmer-soil-note" class="farm-note">Identifying local soil water-holding behavior...</p>
       </div>
     </div>
 
-    <!-- MUST #4: Ranked 3-Season Rotation Cards -->
+    <!-- 2. Collapsible Raw Telemetry Drawer -->
+    <details class="raw-telemetry-drawer">
+      <summary>View Raw NASA Satellite & Soil Data</summary>
+      <div class="telemetry-strip">
+        <div class="tele-box">
+          <span class="tele-label">Annual Rainfall (NASA POWER)</span>
+          <strong id="tele-rain">-- mm</strong>
+        </div>
+        <div class="tele-box">
+          <span class="tele-label">Mar / May Peak Heat</span>
+          <strong id="tele-heat">-- °C</strong>
+        </div>
+        <div class="tele-box">
+          <span class="tele-label">Root-Zone Wetness (NASA)</span>
+          <strong id="tele-smap">--</strong>
+        </div>
+        <div class="tele-box">
+          <span class="tele-label">Soil Texture Class</span>
+          <strong id="tele-soil">--</strong>
+        </div>
+      </div>
+    </details>
+
+    <!-- 3. Ranked 3-Season Rotation Cards -->
     <div id="rotation-results" class="results-grid"></div>
-  </div>
 </section>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script src="data/regions.js"></script>
