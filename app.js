@@ -292,7 +292,7 @@ function renderRotationCards() {
 
   const container = document.getElementById("rotation-results");
   container.innerHTML =
-    `<div style="grid-column: 1 / -1; color: #7dd3fc; font-size: 0.88rem; font-weight: 600;">
+    `<div style="grid-column: 1 / -1; color: black; font-size: 0.88rem; font-weight: 600;">
       Active Crop Pool: ${calendar.sourceLabel}
     </div>` +
     aridBanner +
