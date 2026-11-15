@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+
+        <title>Satellite Insights</title>
+        <link rel="icon" type="image/png" href="wallpapers/log01.png">
+
+        <link rel="stylesheet" href="general.css">
+        <link rel = "stylesheet" href="header.css">
+        <link rel="stylesheet" href="subsections.css">
+    </head>
+    <body style="background-color: #faf8f3; 
+                color: white;
+                display: flex;
+                flex-direction: column;
+                "
+                >
+        <div class="main-content">
+            <div class="header">
+                <div class="left-section">
+                    <img class="logo" src="wallpapers/Space_Apps_Logo_Color_and_White.width-440.jpegquality-60.png">
+                </div>
+                <div class="middle-section">
+                    <div class="name">TEAM  MOTHI  MANSA</div>
+                </div>
+                <div class ="right-section">
+                    <button class="translate1" id="translateBtn">
+                        <img class="translate" src="icons/translate icon.png">
+                    </button>                 
+                    <p class="guide"> Register/Log in </p>
+                    <button class="sign1">
+                        <img class="sign-logo" src="icons/signin.webp">
+                    </button>
+                </div>
+            </div>
+            <div class="header2">
+                <a href="1stpage.html" class="H1">Home</a>
+                <a href="2ndpage.html" class="H2">About</a>
+                <a href="3rdpage.html" class="H3">Guide</a>
+                <div class="H4">
+                    <select class="dropdown" onchange="if(this.value) window.location.href=this.value">
+                        <option value="" disabled selected>Analyse My Farm</option>
+                        <option value="3rdpart.html">Rotation Planner</option>
+                        <option value="4thpart.html">Satellite Insights</option>
+                        <option value="5thpart.html">Methodology</option>
+                    </select>
+                </div>
+                <a href="5thpage.html" class="H5">Downloads</a>
+            </div>
+            <div id="translateBox">
+                <div id="google_translate_element"></div>
+            </div>
+        </div>
+        <footer class="footer">
+            <div class="footer-top">
+                <div class="footer-logo">
+                    <img class="teamlogo" src="wallpapers/logo.png">
+                </div>
+                <div class="footer-name">
+                    <h3>Team Members</h3>
+                    <p>Pranav Mathur</p>
+                    <p>Aditya Pawar</p>
+                    <p>Ashish Mathur</p>
+                    <p>Sameer Patel</p>
+                </div>
+                <div class="footer-contact">
+                    <h3>Contact Us</h3>
+                    <p>Email: example@gmail.com</p>
+                    <p>Email: example@gmail.com</p>
+                    <p>Email: example@gmail.com</p>
+                    <p>Email: example@gmail.com</p>
+                </div>
+                <div class="footer-contact">
+                    <h3>Contact Us</h3>
+                    <p>Email: example@gmail.com</p>
+                    <p>Email: example@gmail.com</p>
+                    <p>Email: example@gmail.com</p>
+                    <p>Email: example@gmail.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 ARUNDHATI. All Rights Reserved.</p>
+            </div>
+        </footer>
+        <div class="translate">
+            <script>
+                document.getElementById("translateBtn").addEventListener("click", function() {
+                    document.getElementById("translateBox").classList.toggle("show");
+                });
+
+                function googleTranslateElementInit() {
+                    new google.translate.TranslateElement(
+                        {pageLanguage: 'en'},
+                        'google_translate_element'
+                    );
+                }
+            </script>
+            <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        </div>
+    </body>
+</html>
