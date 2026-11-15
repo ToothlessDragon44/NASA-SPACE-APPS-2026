@@ -1,7 +1,7 @@
 .header{
     height: 65px;
     width: 100%;
-    background-color: rgb(37, 125, 193);
+    background-color: rgb(193, 112, 37);
     color: white;
     display: flex;
     flex-direction: row;
@@ -15,7 +15,7 @@
 .header2{
     height: 40px;
     width: 100%;
-    background-color: rgb(2, 33, 56);
+    background-color: #17645f;
     color: white;
     display: flex;
     flex-direction: row;
@@ -111,7 +111,7 @@
     border: none;
 }
 .dropdown:focus{
-    background-color:rgb(2, 74, 129) ;
+    background-color:#17645f ;
     color: white;
 }
 #translateBox {
@@ -127,4 +127,65 @@
 
 #translateBox.show {
     display: block;
+}
+.main-content {
+    flex: 1;
+}
+
+.footer {
+    width: 100%;
+    background-color: rgb(193, 112, 37);
+    color: white;
+    font-family: "Michroma", sans-serif;
+    margin: 0;
+    padding: 35px 50px 15px;
+    box-sizing: border-box;
+}
+
+.footer-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    padding-bottom: 10px;
+}
+
+.teamlogo{
+    width: 170px;
+    height: 170px;
+    display: flex;
+    align-items: center;
+    margin-left: 40px;
+
+}
+.footer-name,
+.footer-contact,
+.teamlogo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.footer-name h3,
+.footer-contact h3 {
+    font-size: 14px;
+    margin: 0 0 10px;
+}
+
+.footer-name p {
+    color: white;
+    text-decoration: none;
+    font-size: 11px;
+}
+
+
+.footer-contact p {
+    font-size: 11px;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.3);
+    text-align: center;
+    padding-top: 15px;
+    font-size: 10px;
 }
