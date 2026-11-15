@@ -1,5 +1,5 @@
- <!DOCTYPE html>
- <html>
+<!DOCTYPE html>
+<html>
     <head>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +13,7 @@
         <link rel="stylesheet" href="part.css">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     </head>
+<<<<<<< HEAD
  <body>
  <section id="planner" class="planner-section">
   <div class="planner-container">
@@ -31,6 +32,9 @@
                 flex-direction: column;
                 "
                 >
+=======
+    <body style="background-color: #faf8f3; color: white; display: flex; flex-direction: column;">
+>>>>>>> 0060b0b2b4097905293399ca72a6af56e35c39eb
                 <div class="main-content">
                     <div class="header">
                         <div class="left-section">
@@ -69,8 +73,20 @@
                 </div>
                 <section id="planner" class="planner-section">
                   <div class="planner-container">
+<<<<<<< HEAD
                     <h2>Interactive Crop Rotation Planner</h2>
 
+=======
+                    <div class="planner-header-bar">
+                      <h2 id="planner-heading">Interactive Crop Rotation Planner</h2>
+                      <div class="lang-switcher" role="group" aria-label="Select Language">
+                        <button type="button" class="lang-btn active" data-lang="en">English</button>
+                        <button type="button" class="lang-btn" data-lang="hi">हिंदी</button>
+                        <button type="button" class="lang-btn" data-lang="mr">मराठी</button>
+                        <button type="button" class="lang-btn" data-lang="gu">ગુજરાતી</button>
+                      </div>
+                    </div>
+>>>>>>> 0060b0b2b4097905293399ca72a6af56e35c39eb
                     <!-- MUST #1: Location Selector (Presets + Pan-India Map) -->
                     <div class="location-bar">
                         <button type="button" id="gps-locate-btn" class="gps-btn">
@@ -255,6 +271,7 @@
 
                     <!-- 3. Ranked 3-Season Rotation Cards -->
                     <div id="rotation-results" class="results-grid"></div>
+                  </div>
                 </section>
                         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
                         <script src="data/regions.js"></script>
