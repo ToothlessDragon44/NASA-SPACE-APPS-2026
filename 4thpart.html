@@ -723,6 +723,48 @@ applyLang();
   }
 })();
 </script>
+<script src="extras.js"></script>
+<script src="kvk.js"></script>
+<script>
+(function syncPlannerRepoBridge() {
+  // Point this to Repo 1's planner page (local path or deployed URL)
+  const PLANNER_URL = "../3rdpart.html";
+
+  // 1. Outgoing: Wire "Open the crop rotation planner ->" to pass the selected field back to Repo 1
+  const plannerLink = document.querySelector("a.planner");
+  if (plannerLink) {
+    plannerLink.href = PLANNER_URL;
+    plannerLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams({ lang: state.lang });
+      if (state.loc) {
+        params.set("lat", state.loc.lat.toFixed(4));
+        params.set("lon", state.loc.lon.toFixed(4));
+      }
+      window.location.href = `${PLANNER_URL}?${params.toString()}`;
+    });
+  }
+
+  // 2. Incoming: Read ?lat=&lon=&lang= from Repo 1, place pin, sync language, and run check
+  const qs = new URLSearchParams(window.location.search);
+  const lat = parseFloat(qs.get("lat"));
+  const lon = parseFloat(qs.get("lon"));
+  const lang = qs.get("lang");
+
+  if (lang && T[lang]) {
+    state.lang = lang;
+    const langSel = document.getElementById("langSel");
+    if (langSel) langSel.value = lang;
+    applyLang();
+  }
+
+  if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+    setLocation(lat, lon, true);
+    run();
+  }
+})();
+</script>
+</body>
 </body>
 </body>
 </html>
