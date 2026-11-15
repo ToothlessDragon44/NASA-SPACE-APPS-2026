@@ -459,3 +459,24 @@
   border-color: #f87171;
   color: #ffffff;
 }
+
+.secondary-insights-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  background: #0f172a;
+  color: #7dd3fc;
+  border: 1.5px solid #0284c7;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.secondary-insights-btn:hover {
+  background: #0c4a6e;
+  color: #ffffff;
+}
+.secondary-insights-btn:active {
+  transform: scale(0.98);
+}

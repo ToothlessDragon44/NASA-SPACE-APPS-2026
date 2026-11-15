@@ -936,3 +936,24 @@ stateSelect.value = "Maharashtra";
 populateDistrictDropdown("Maharashtra", "Ahilyanagar");
 syncPrevCropDropdown();
 selectLocation(19.0948, 74.7480, "Ahilyanagar, Maharashtra");
+
+const openInsightsBtn = document.getElementById("open-insights-btn");
+if (openInsightsBtn) {
+  openInsightsBtn.addEventListener("click", () => {
+    const lat = currentState.lat.toFixed(4);
+    const lon = currentState.lon.toFixed(4);
+    const label = currentState.label || "Selected Farm";
+
+    try {
+      localStorage.setItem("selectedFarm", JSON.stringify({
+        lat: Number(lat),
+        lon: Number(lon),
+        label
+      }));
+    } catch (e) {}
+
+    const params = new URLSearchParams({ lat, lon, label });
+    window.location.href = `index.html?${params.toString()}`;
+  });
+}
+
