@@ -1,11 +1,12 @@
-<!DOCTYPE html>
-<html>
+ <!DOCTYPE html>
+ <html>
     <head>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
 
         <title>TEAM MOTHI MANSA</title>
+        <link rel="icon" type="image/png" href="wallpapers/log01.png">
 
         <link rel="stylesheet" href="general.css">
         <link rel = "stylesheet" href="header.css">
@@ -13,28 +14,12 @@
         <link rel="stylesheet" href="part.css">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     </head>
-<<<<<<< HEAD
- <body>
- <section id="planner" class="planner-section">
-  <div class="planner-container">
-    <div class="planner-header-bar">
-      <h2 id="planner-heading">Interactive Crop Rotation Planner</h2>
-      <div class="lang-switcher" role="group" aria-label="Select Language">
-        <button type="button" class="lang-btn active" data-lang="en">English</button>
-        <button type="button" class="lang-btn" data-lang="hi">हिंदी</button>
-        <button type="button" class="lang-btn" data-lang="mr">मराठी</button>
-        <button type="button" class="lang-btn" data-lang="gu">ગુજરાતી</button>
-      </div>
-    </div>
     <body style="background-color: #faf8f3; 
                 color: white;
                 display: flex;
                 flex-direction: column;
                 "
                 >
-=======
-    <body style="background-color: #faf8f3; color: white; display: flex; flex-direction: column;">
->>>>>>> 0060b0b2b4097905293399ca72a6af56e35c39eb
                 <div class="main-content">
                     <div class="header">
                         <div class="left-section">
@@ -73,20 +58,8 @@
                 </div>
                 <section id="planner" class="planner-section">
                   <div class="planner-container">
-<<<<<<< HEAD
                     <h2>Interactive Crop Rotation Planner</h2>
 
-=======
-                    <div class="planner-header-bar">
-                      <h2 id="planner-heading">Interactive Crop Rotation Planner</h2>
-                      <div class="lang-switcher" role="group" aria-label="Select Language">
-                        <button type="button" class="lang-btn active" data-lang="en">English</button>
-                        <button type="button" class="lang-btn" data-lang="hi">हिंदी</button>
-                        <button type="button" class="lang-btn" data-lang="mr">मराठी</button>
-                        <button type="button" class="lang-btn" data-lang="gu">ગુજરાતી</button>
-                      </div>
-                    </div>
->>>>>>> 0060b0b2b4097905293399ca72a6af56e35c39eb
                     <!-- MUST #1: Location Selector (Presets + Pan-India Map) -->
                     <div class="location-bar">
                         <button type="button" id="gps-locate-btn" class="gps-btn">
@@ -142,42 +115,6 @@
                           </div>
                         </div>
 
-<<<<<<< HEAD
-        <!-- 3. Visual Primary Farmer Goal Selector -->
-        <div class="control-block">
-          <label>3. What is your main goal this year?</label>
-          <input type="hidden" id="priority-goal" value="water" />
-          <div id="goal-tile-grid" class="visual-tile-grid two-col">
-            <button type="button" class="visual-tile goal-tile active" data-goal="water">
-              <span class="tile-icon">💧</span>
-              <span class="tile-title">Save Water</span>
-              <span class="tile-sub">Low watering need</span>
-            </button>
-            <button type="button" class="visual-tile goal-tile" data-goal="nitrogen">
-              <span class="tile-icon">🌱</span>
-              <span class="tile-title">Enrich Soil</span>
-              <span class="tile-sub">Natural nitrogen boost</span>
-            </button>
-            <button type="button" class="visual-tile goal-tile" data-goal="resilience">
-              <span class="tile-icon">🛡️</span>
-              <span class="tile-title">Beat Heat & Drought</span>
-              <span class="tile-sub">Safe in dry spells</span>
-            </button>
-            <button type="button" class="visual-tile goal-tile" data-goal="yield">
-              <span class="tile-icon">💰</span>
-              <span class="tile-title">Higher Income</span>
-              <span class="tile-sub">Best market value</span>
-            </button>
-          </div>
-        </div>
-        <button type="button" id="generate-btn" class="primary-btn">Show Best Crop Rotation</button>
-        <button type="button" id="open-insights-btn" class="secondary-insights-btn">
-           Check Satellite Insights for This Field →
-        </button>
-        <button type="button" id="generate-btn" class="primary-btn">Show Best Crop Rotation</button>
-      </div>
-    </div>
-=======
                         <!-- 3. Visual Primary Farmer Goal Selector -->
                         <div class="control-block">
                           <label>3. What is your main goal this year?</label>
@@ -209,7 +146,6 @@
                         <button type="button" id="generate-btn" class="primary-btn">Show Best Crop Rotation</button>
                       </div>
                     </div>
->>>>>>> d27724b254315cac401e82bfb4b09cb6a1c87445
 
                 <!-- 1. Plain-Language Field Conditions -->
                     <div class="farmer-telemetry-strip">
@@ -271,7 +207,6 @@
 
                     <!-- 3. Ranked 3-Season Rotation Cards -->
                     <div id="rotation-results" class="results-grid"></div>
-                  </div>
                 </section>
                         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
                         <script src="data/regions.js"></script>
