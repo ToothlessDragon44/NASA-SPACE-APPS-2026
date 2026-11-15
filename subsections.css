@@ -29,9 +29,8 @@
     gap: 20px;
 }
 
-
 .weather-box {
-    width: 450px;
+    width: 370px;
     padding: 20px;
     background-color: #17645f;
     color: white;
@@ -65,11 +64,21 @@
 }
 
 .weather1{
-    background-color: lightpink;
     height: 485px;
     border-radius: 5px;
     margin-left: 300px;
     margin-top: 50px;
     margin-right: 300px;
     margin-bottom: 150px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 10px;
+}
+.map{
+    left: 0;
+    height: 485px;
+    width :100%;
+    border-radius: 20px;
+    border-color: #17645f;
 }
