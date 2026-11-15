@@ -1,0 +1,104 @@
+ <!DOCTYPE html>
+ <html>
+ <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+
+        <title>TEAM MOTHI MANSA</title>
+
+        <link rel="stylesheet" href="general.css">
+        <link rel = "stylesheet" href="header.css">
+        <link rel="stylesheet" href="subsections.css">
+        <link rel="stylesheet" href="part.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    </head>
+ <body>
+ <section id="planner" class="planner-section">
+  <div class="planner-container">
+    <h2>Interactive Crop Rotation Planner</h2>
+
+    <!-- MUST #1: Location Selector (Presets + Pan-India Map) -->
+    <div class="location-bar">
+      <!-- REPLACE .preset-buttons INSIDE .location-bar WITH THIS -->
+<div class="cascade-selectors">
+  <div class="select-group">
+    <label for="state-select">State / UT <span class="req">*</span></label>
+    <select id="state-select">
+      <option value="">-- Select State / UT --</option>
+    </select>
+  </div>
+
+  <div class="select-group">
+    <label for="district-select">District <span class="req">*</span></label>
+    <select id="district-select" disabled>
+      <option value="">-- Select State First --</option>
+    </select>
+  </div>
+</div>
+      <div id="coord-readout" class="coord-badge">Selected: 19.09°N, 74.75°E (Ahilyanagar)</div>
+    </div>
+
+    <div class="planner-grid">
+      <div id="india-map"></div>
+
+      <!-- MUST #2: 3 Farmer Context Controls -->
+      <div class="controls-card">
+        <label for="prev-crop">Previous / Current Crop</label>
+        <select id="prev-crop">
+          <option value="cotton">Cotton</option>
+          <option value="sugarcane">Sugarcane</option>
+          <option value="bajra">Pearl Millet (Bajra)</option>
+          <option value="groundnut">Groundnut</option>
+          <option value="soybean">Soybean</option>
+          <option value="rice">Paddy (Rice)</option>
+          <option value="wheat">Wheat</option>
+        </select>
+
+        <label>Water Source</label>
+        <div class="radio-group">
+          <label><input type="radio" name="water-source" value="rainfed" checked /> Rainfed</label>
+          <label><input type="radio" name="water-source" value="irrigated" /> Irrigated</label>
+        </div>
+
+        <label for="priority-goal">Primary Farmer Goal</label>
+        <select id="priority-goal">
+          <option value="water">Conserve Water</option>
+          <option value="nitrogen">Restore Soil Nitrogen</option>
+          <option value="resilience">Drought & Heat Resilience</option>
+          <option value="yield">Maximize Yield</option>
+        </select>
+
+        <button type="button" id="generate-btn" class="primary-btn">Generate Rotation Plan</button>
+      </div>
+    </div>
+
+    <!-- MUST #3: Live Climate & Soil Telemetry Strip -->
+    <div class="telemetry-strip">
+      <div class="tele-box">
+        <span class="tele-label">Annual Rainfall (NASA POWER)</span>
+        <strong id="tele-rain">-- mm</strong>
+      </div>
+      <div class="tele-box">
+        <span class="tele-label">Mar / May Peak Heat</span>
+        <strong id="tele-heat">-- °C</strong>
+      </div>
+      <div class="tele-box">
+        <span class="tele-label">Root-Zone Moisture (SMAP)</span>
+        <strong id="tele-smap">-- m³/m³</strong>
+      </div>
+      <div class="tele-box">
+        <span class="tele-label">Local Soil Profile</span>
+        <strong id="tele-soil">--</strong>
+      </div>
+    </div>
+
+    <!-- MUST #4: Ranked 3-Season Rotation Cards -->
+    <div id="rotation-results" class="results-grid"></div>
+  </div>
+</section>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="data/regions.js"></script>
+        <script src="app.js"></script>
+</body>
+</html>
