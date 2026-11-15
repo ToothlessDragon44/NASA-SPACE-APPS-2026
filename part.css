@@ -1,7 +1,7 @@
 .planner-section {
-  background: #0f172a;
+  background: #faf8f3;
   color: #f8fafc;
-  padding: 2.5rem 1.5rem;
+  padding: 105px;
   font-family: system-ui, -apple-system, sans-serif;
 }
 .planner-container {
@@ -16,7 +16,7 @@
   gap: 1rem;
   margin: 1rem 0;
 }
-/* REPLACE .preset-buttons & .preset-btn WITH THIS */
+
 .cascade-selectors {
   display: flex;
   flex-wrap: wrap;
@@ -43,7 +43,7 @@
   padding: 0.6rem 0.85rem;
   border-radius: 6px;
   border: 1px solid #38bdf8;
-  background: #1e293b;
+  background: rgb(193, 112, 37);
   color: #f8fafc;
   font-size: 0.92rem;
   font-weight: 600;
@@ -56,11 +56,11 @@
   cursor: not-allowed;
 }
 .coord-badge {
-  background: #1e293b;
+  background: rgb(193, 112, 37);
   padding: 0.5rem 0.9rem;
   border-radius: 6px;
   font-size: 0.9rem;
-  color: #7dd3fc;
+  color: white;
 }
 .planner-grid {
   display: grid;
@@ -75,7 +75,7 @@
   z-index: 1;
 }
 .controls-card {
-  background: #1e293b;
+  background: #7c4a10f5;
   padding: 1.25rem;
   border-radius: 10px;
   border: 1px solid #334155;
@@ -85,7 +85,7 @@
 }
 .controls-card label {
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: white;
   font-weight: 600;
 }
 .controls-card select {
@@ -107,7 +107,7 @@
 .primary-btn {
   margin-top: 0.5rem;
   padding: 0.75rem;
-  background: #16a34a;
+  background: lightcoral;
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -145,7 +145,7 @@
   gap: 1.25rem;
 }
 .rotation-card {
-  background: #1e293b;
+  background: #7c4a10f5;
   border: 1px solid #334155;
   border-radius: 10px;
   padding: 1.25rem;
@@ -175,7 +175,7 @@
 .fit-moderate { background: #713f12; color: #fde047; }
 .fit-stress { background: #7f1d1d; color: #fca5a5; }
 .season-flow {
-  background: #0f172a;
+  background: #5b3102f5;
   padding: 0.75rem;
   border-radius: 6px;
   font-size: 0.92rem;
@@ -183,7 +183,7 @@
 }
 .reason-text {
   font-size: 0.88rem;
-  color: #cbd5e1;
+  color: white;
   margin: 0;
 }
 @media (max-width: 850px) {
@@ -199,7 +199,7 @@
   margin: 1.25rem 0 0.75rem 0;
 }
 .farm-card {
-  background: #1e293b;
+  background: #7c4a10f5;
   border: 1px solid #334155;
   border-radius: 10px;
   padding: 1rem;
@@ -234,11 +234,11 @@
   margin: 0;
   font-size: 0.84rem;
   line-height: 1.45;
-  color: #cbd5e1;
+  color: white;
 }
 .raw-telemetry-drawer {
   margin-bottom: 1.25rem;
-  background: #0f172a;
+  background: #e19239f5;
   border: 1px solid #334155;
   border-radius: 8px;
   padding: 0.55rem 0.9rem;
@@ -247,7 +247,7 @@
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #7dd3fc;
+  color: white;
   user-select: none;
 }
 .raw-telemetry-drawer .telemetry-strip {
@@ -292,7 +292,6 @@
   }
 }
 
-/* Stretch map height to match the visual controls panel on desktop */
 #india-map {
   height: 100%;
   min-height: 390px;
@@ -327,7 +326,7 @@
   gap: 0.2rem;
   min-height: 54px;
   padding: 0.55rem 0.45rem;
-  background: #0f172a;
+  background: rgb(193, 112, 37);
   color: #e2e8f0;
   border: 1.5px solid #334155;
   border-radius: 8px;
@@ -337,8 +336,8 @@
 
 .visual-tile:hover,
 .water-tile:hover {
-  border-color: #38bdf8;
-  background: #162238;
+  border-color: white;
+  background: rgb(193, 112, 37);
 }
 
 .visual-tile:active,
@@ -346,13 +345,12 @@
   transform: scale(0.98);
 }
 
-/* Active state for button tiles and checked radio water tiles */
 .visual-tile.active,
 .water-tile:has(input:checked) {
-  background: #0c4a6e;
-  border-color: #38bdf8;
+  background: rgb(193, 112, 37);
+  border-color: white;
   color: #ffffff;
-  box-shadow: 0 0 0 1px #38bdf8;
+  box-shadow: 0 0 0 1px white;
 }
 
 .water-tile input[type="radio"] {
@@ -375,13 +373,13 @@
 
 .tile-sub {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: white;
   line-height: 1.2;
 }
 
 .visual-tile.active .tile-sub,
 .water-tile:has(input:checked) .tile-sub {
-  color: #bae6fd;
+  color: white;
 }
 
 @media (max-width: 850px) {
