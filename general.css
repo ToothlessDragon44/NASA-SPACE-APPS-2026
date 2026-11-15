@@ -10,10 +10,51 @@
 .para {
     font-family: "Michroma",sans-serif;
     position: absolute;
-    top: 320px;
+    top: 260px;
     right: 100px;
     left: 700px;
 }
 .more-info{
     color: yellowgreen;
+}
+.about1{
+    background-color: #f9eccd;
+    color: black;
+    height: 585px;
+    width: 1000px;
+    display: flex;
+    margin-top: 110px;
+    margin-left: 200px;
+    margin-bottom:50px;
+    display: flex;
+    border-radius: 30px;
+    
+    
+    flex-direction: row;
+    flex-wrap: wrap;
+   
+}
+.first{
+    padding-top: 20px;
+    padding-left: 60px;
+    height: 200px;
+    width: 400px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    box-sizing: border-box;
+
+}
+.photo1{
+    height :200px;
+    width: 151px;
+    object-fit: cover;
+    border-radius: 40%;
+}
+.name{
+    font-family: "Michroma", sans-serif;
+    font-size: 18px;
+    padding-left: 8px;
+    left: 0;
 }
