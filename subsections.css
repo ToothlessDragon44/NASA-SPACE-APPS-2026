@@ -11,6 +11,10 @@
     margin-right: 300px;
     margin-bottom: 700px;
 }
+.news h3{
+    margin-top: 0;
+    margin-bottom: 10px;
+}
 .news:hover{
     cursor: pointer;
     box-shadow: 0px 2px 5px #012a27;
@@ -18,5 +22,9 @@
 }
 .h1,.h2,.h3,.h4,.h5,.h6{
     font-family: arial;
+    row-gap: 10px;
     font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
