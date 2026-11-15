@@ -4,7 +4,7 @@ from datetime import date
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-ee.Initialize(project="shining-domain-513816-d7")
+ee.Initialize(project="custom-rampart-470805-f6")
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
