@@ -1,104 +1,770 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<style>
+  :root { --ink:#0f172a; --muted:#64748b; --line:#e5e7eb; --soft:#f8fafc; --accent:#17645f; --accent2:#21635f; --radius:22px;
+          --shadow:0 10px 30px rgba(15,23,42,.10), 0 30px 60px -20px rgba(15,23,42,.25); }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; background:#faf8f3; color:var(--ink); font-size:16px;
+         font-family:'Inter','Noto Sans Devanagari',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+  button { font-family:inherit; }
+  .app { display:flex; gap:22px; height:100vh; padding:22px; }
+  #side { width:440px; flex:none; overflow-y:auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+          box-shadow:0 8px 24px rgba(15,23,42,.06); padding:24px; animation:slideLeft .7s cubic-bezier(.2,.8,.2,1) both; }
+  #side::-webkit-scrollbar { width:8px; } #side::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:8px; }
+  #mapwrap { position:relative; flex:1; border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
+             border:1px solid var(--line); animation:slideRight .8s cubic-bezier(.2,.8,.2,1) both; }
+  #mapwrap.nudge { animation:nudge .6s; }
+  #map { position:absolute; inset:0; }
 
-        <title>Satellite Insights</title>
-        <link rel="icon" type="image/png" href="wallpapers/log01.png">
+  .top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .logo { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:24px; color:#fff;
+          background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 8px 18px rgba(34,197,94,.35); }
+  h1 { font-size:21px; margin:0; letter-spacing:-.3px; }
+  .subtitle { margin:2px 0 0; font-size:12.5px; color:var(--muted); }
+  .lang { display:flex; background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:3px; }
+  .lang button { border:0; background:transparent; padding:7px 11px; border-radius:999px; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; transition:all .2s; }
+  .lang button.on { background:var(--accent); color:#fff; box-shadow:0 4px 10px rgba(22,163,74,.35); }
 
-        <link rel="stylesheet" href="general.css">
-        <link rel = "stylesheet" href="header.css">
-        <link rel="stylesheet" href="subsections.css">
-    </head>
-    <body style="background-color: #faf8f3; 
-                color: white;
-                display: flex;
-                flex-direction: column;
-                "
-                >
-        <div class="main-content">
-            <div class="header">
-                <div class="left-section">
-                    <img class="logo" src="wallpapers/Space_Apps_Logo_Color_and_White.width-440.jpegquality-60.png">
-                </div>
-                <div class="middle-section">
-                    <div class="name">Project Arundhati</div>
-                </div>
-                <div class ="right-section">
-                    <button class="translate1" id="translateBtn">
-                        <img class="translate" src="icons/translate icon.png">
-                    </button>                 
-                    <p class="guide"> Register/Log in </p>
-                    <button class="sign1">
-                        <img class="sign-logo" src="icons/signin.webp">
-                    </button>
-                </div>
-            </div>
-            <div class="header2">
-                <a href="1stpage.html" class="H1">Home</a>
-                <a href="2ndpage.html" class="H2">About</a>
-                <a href="3rdpage.html" class="H3">Guide</a>
-                <div class="H4">
-                    <select class="dropdown" onchange="if(this.value) window.location.href=this.value">
-                        <option value="" disabled selected>Satellite Insights</option>
-                        <option value="3rdpart.html">Rotation Planner</option>
-                        <option value="4thpart.html">Satellite Insights</option>
-                        <!--<option value="5thpart.html">Methodology</option>-->
-                    </select>
-                </div>
-                <a href="5thpage.html" class="H5">Downloads</a>
-            </div>
-            <div id="translateBox">
-                <div id="google_translate_element"></div>
-            </div>
+  .step { margin-top:22px; animation:fadeUp .6s both; }
+  .step h2 { display:flex; align-items:center; gap:10px; font-size:17px; margin:0 0 12px; letter-spacing:-.2px; }
+  .num { width:26px; height:26px; flex:none; border-radius:50%; display:grid; place-items:center; font-size:13px; font-weight:800; color:#fff; background:var(--accent); }
+  .gps { width:100%; padding:15px; border-radius:16px; border:2px dashed #86efac; background:#f0fdf4; color:#166534; font-size:16px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .gps:hover { transform:translateY(-2px); background:#dcfce7; }
+  .or { margin:10px 0 0; text-align:center; font-size:13.5px; color:var(--muted); }
+  .locstate { margin-top:8px; text-align:center; font-size:14px; font-weight:700; color:var(--accent); min-height:20px; }
+
+  .topics { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .topic { text-align:left; padding:14px; border:2px solid var(--line); border-radius:18px; background:#fff; cursor:pointer; transition:transform .2s, border-color .2s, box-shadow .2s, background .2s; }
+  .topic:hover { transform:translateY(-3px); box-shadow:0 10px 20px rgba(15,23,42,.08); }
+  .topic .em { font-size:32px; display:block; margin-bottom:6px; }
+  .topic b { display:block; font-size:15px; line-height:1.25; }
+  .topic small { display:block; font-size:12px; color:var(--muted); margin-top:3px; line-height:1.3; }
+  .topic.sel { border-color:var(--accent2); background:#f0fdf4; box-shadow:0 0 0 4px rgba(34,197,94,.15); }
+
+  .pills { display:flex; gap:10px; }
+  .pills button { flex:1; padding:13px 6px; border-radius:14px; border:2px solid var(--line); background:#fff; font-size:14px; font-weight:700; color:#334155; cursor:pointer; transition:all .2s; }
+  .pills button:hover { border-color:#cbd5e1; transform:translateY(-1px); }
+  .pills button.sel { border-color:var(--accent2); background:#f0fdf4; color:#166534; }
+
+  #goBtn { width:100%; margin-top:24px; padding:17px; border:0; border-radius:18px; cursor:pointer; font-size:18px; font-weight:800; color:#fff;
+           background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 12px 26px rgba(34,197,94,.38); transition:transform .2s, box-shadow .2s; }
+  #goBtn:hover { transform:translateY(-2px); box-shadow:0 16px 32px rgba(34,197,94,.45); }
+  #goBtn:active { transform:scale(.98); }
+  #goBtn:disabled { cursor:progress; filter:saturate(.8); }
+  .spinner { display:none; width:20px; height:20px; margin-right:10px; vertical-align:-4px; border:3px solid rgba(255,255,255,.45); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; }
+  #goBtn.loading .spinner { display:inline-block; }
+  a.planner { display:inline-block; margin-top:16px; font-size:14.5px; font-weight:600; color:var(--accent); text-decoration:none; transition:transform .2s; }
+  a.planner:hover { transform:translateX(4px); text-decoration:underline; }
+
+  #skeleton { display:none; margin-top:20px; } #skeleton.show { display:block; }
+  .sk { height:14px; border-radius:8px; margin-bottom:10px; background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 50%,#eef2f7 75%); background-size:200% 100%; animation:shimmer 1.3s infinite; }
+  .sk.tall { height:120px; border-radius:16px; }
+  .skmsg { font-size:14px; font-weight:600; color:var(--muted); margin-bottom:12px; }
+
+  .result { display:none; margin-top:22px; padding:20px; border-radius:22px; border:2px solid var(--line); background:var(--soft); }
+  .result.show { display:block; animation:pop .5s cubic-bezier(.2,1.2,.4,1) both; }
+  .result.lvl-good { background:#f0fdf4; border-color:#bbf7d0; }
+  .result.lvl-mid  { background:#fffbeb; border-color:#fde68a; }
+  .result.lvl-bad  { background:#fef2f2; border-color:#fecaca; }
+  .result.lvl-err  { background:#f1f5f9; border-color:#cbd5e1; }
+  .result.lvl-err .only-ok { display:none; }
+  .hero { display:flex; align-items:center; gap:14px; }
+  .face { font-size:54px; line-height:1; animation:bob 2.4s ease-in-out infinite; }
+  .tt { font-size:13px; font-weight:700; color:var(--muted); }
+  .verdict { font-size:21px; font-weight:800; line-height:1.25; letter-spacing:-.3px; margin-top:2px; }
+  .bignum { font-size:40px; font-weight:800; letter-spacing:-1px; margin:12px 0 0; }
+  .bignum:empty { display:none; }
+  .gauge { margin-top:18px; }
+  .gbar { position:relative; height:14px; border-radius:999px; border:1px solid rgba(15,23,42,.12); }
+  .marker { position:absolute; top:-7px; left:0; width:28px; height:28px; margin-left:-14px; border-radius:50%; background:#fff; border:5px solid var(--ink); box-shadow:0 4px 10px rgba(0,0,0,.3); transition:left 1.2s cubic-bezier(.2,.9,.2,1); }
+  .glab { display:flex; justify-content:space-between; margin-top:12px; font-size:12.5px; font-weight:700; color:#475569; }
+  .tipbox { margin-top:16px; padding:13px 14px; background:#fff; border-radius:14px; border:1px solid var(--line); font-size:15px; font-weight:600; line-height:1.45; }
+  .facts { margin-top:12px; display:grid; gap:8px; }
+  .fact { font-size:14px; font-weight:600; padding:10px 12px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+  .note { margin:12px 2px 0; font-size:12.5px; line-height:1.5; color:var(--muted); }
+  .disc { margin:8px 2px 0; font-size:11.5px; line-height:1.5; color:#94a3b8; font-style:italic; }
+
+  .expert-link { display:block; margin:22px auto 0; background:none; border:0; color:var(--muted); font-size:13px; font-weight:600; text-decoration:underline; cursor:pointer; }
+  .expert-only { display:none; }
+  body.expert .expert-only { display:block; }
+  .xbox { margin-top:18px; padding:16px; background:var(--soft); border:1px solid var(--line); border-radius:16px; }
+  .xrow { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .xbox label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .xbox input, .xbox select { width:100%; padding:11px 12px; font:inherit; font-size:14px; background:#fff; border:1px solid var(--line); border-radius:12px; outline:none; }
+  .xbox input:focus, .xbox select:focus { border-color:var(--accent2); box-shadow:0 0 0 4px rgba(34,197,94,.15); }
+  .tech { margin-top:12px; padding:10px 12px; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:12.5px; font-weight:600; color:#334155; }
+  .tech:empty { display:none; }
+  .card { display:none; margin-top:16px; padding:16px; background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 6px 18px rgba(15,23,42,.05); }
+  body.expert .card.show { display:block; animation:fadeUp .6s both; }
+  .card-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .card-head b { font-size:14px; } .card-head span { font-size:11px; color:var(--muted); }
+  .chartbox { position:relative; height:230px; }
+
+  #mapLoader { position:absolute; inset:0; z-index:800; display:grid; place-items:center; background:rgba(255,255,255,.55); backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .3s; }
+  #mapLoader.show { opacity:1; }
+  .big-spin { width:56px; height:56px; border:6px solid #d1fae5; border-top-color:var(--accent); border-radius:50%; animation:spin .9s linear infinite; }
+  #legend { position:absolute; left:16px; bottom:28px; z-index:850; width:240px; padding:12px 14px; display:none; background:rgba(255,255,255,.94); backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:16px; box-shadow:0 8px 24px rgba(15,23,42,.18); }
+  #legend.show { display:block; animation:fadeUp .5s both; }
+  #legend .lt { font-size:13px; font-weight:800; margin-bottom:8px; }
+  #legend .bar { height:12px; border-radius:6px; border:1px solid rgba(15,23,42,.12); }
+  #legend .lab { display:flex; justify-content:space-between; margin-top:6px; font-size:12px; font-weight:700; color:#334155; }
+  body:not(.expert) .num-only { display:none; }
+  #mapTag { position:absolute; top:16px; left:50%; transform:translateX(-50%); z-index:850; display:none; padding:9px 18px; background:rgba(255,255,255,.95); border:1px solid var(--line); border-radius:999px; font-size:13px; font-weight:700; box-shadow:0 8px 20px rgba(15,23,42,.15); white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis; }
+  #mapTag.show { display:block; animation:fadeUp .5s both; }
+  .leaflet-bar { border:none !important; box-shadow:0 6px 18px rgba(15,23,42,.18) !important; border-radius:12px !important; overflow:hidden; }
+  .leaflet-container { font-family:inherit; }
+  .pin { position:relative; width:20px; height:20px; }
+  .pin .dot2 { position:absolute; inset:0; border-radius:50%; background:var(--accent); border:3px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.35); animation:drop .55s cubic-bezier(.2,1.4,.4,1) both; }
+  .pin .ring { position:absolute; inset:-9px; border-radius:50%; background:rgba(34,197,94,.4); animation:pulse 1.8s ease-out infinite; }
+  .field-tip { background:#fff; border:0; border-radius:10px; font-weight:700; font-size:12px; padding:4px 9px; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  .field-tip:before { display:none; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+  @keyframes slideLeft { from{opacity:0;transform:translateX(-30px)} to{opacity:1;transform:none} }
+  @keyframes slideRight { from{opacity:0;transform:translateX(30px) scale(.98)} to{opacity:1;transform:none} }
+  @keyframes pop { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  @keyframes shimmer { to{background-position:-200% 0} }
+  @keyframes pulse { 0%{transform:scale(.5);opacity:.9} 100%{transform:scale(1.8);opacity:0} }
+  @keyframes drop { from{transform:translateY(-26px) scale(.6);opacity:0} to{transform:none;opacity:1} }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+  @keyframes nudge { 0%,100%{transform:none} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  @media (max-width:860px) {
+    .app { flex-direction:column; height:auto; padding:12px; gap:14px; }
+    #mapwrap { order:1; height:44vh; flex:none; }
+    #side { order:2; width:100%; overflow:visible; padding:18px; }
+    .topic .em { font-size:28px; }
+  }
+  @media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside id="side">
+    <div class="top">
+      <div class="brand"><div class="logo">🌾</div>
+        <div><h1>Field Shift</h1><p class="subtitle" data-i="sub"></p></div></div>
+      <div class="lang"><button data-lang="en">EN</button><button data-lang="hi">हिं</button><button data-lang="mr">मरा</button></div>
+    </div>
+
+    <section class="step">
+      <h2><span class="num">1</span><span data-i="s1"></span></h2>
+      <button class="gps" id="gpsBtn" data-i="useLoc"></button>
+      <p class="or" data-i="orTap"></p>
+      <div class="locstate" id="locState"></div>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">2</span><span data-i="s2"></span></h2>
+      <div class="topics">
+        <button class="topic" data-topic="crop"><span class="em">🌱</span><b data-i="c_crop"></b><small data-i="c_crop_s"></small></button>
+        <button class="topic" data-topic="soil"><span class="em">💧</span><b data-i="c_soil"></b><small data-i="c_soil_s"></small></button>
+        <button class="topic" data-topic="heat"><span class="em">🌡️</span><b data-i="c_heat"></b><small data-i="c_heat_s"></small></button>
+        <button class="topic" data-topic="rain"><span class="em">🌧️</span><b data-i="c_rain"></b><small data-i="c_rain_s"></small></button>
+      </div>
+    </section>
+
+    <section class="step">
+      <h2><span class="num">3</span><span data-i="s3"></span></h2>
+      <div class="pills" id="pills"><button data-days="30">30</button><button data-days="60">60</button><button data-days="90">90</button></div>
+    </section>
+
+    <button id="goBtn"><span class="spinner"></span><span id="btnText"></span></button>
+
+    <!-- KEEP YOUR OWN LINK: replace # in href with your planner URL -->
+    <a class="planner" href="#" data-i="planner"></a>
+
+    <div id="skeleton"><div class="skmsg" data-i="loading"></div><div class="sk" style="width:60%"></div><div class="sk" style="width:90%"></div><div class="sk tall"></div></div>
+
+    <div id="result" class="result">
+      <div class="hero"><div class="face" id="rFace">😊</div>
+        <div><div class="tt" id="rTopic"></div><div class="verdict" id="rVerdict"></div></div></div>
+      <div class="bignum only-ok" id="rBig"></div>
+      <div class="gauge only-ok"><div class="gbar" id="gBar"><div class="marker" id="gMark"></div></div>
+        <div class="glab"><span id="gLo"></span><span id="gHi"></span></div></div>
+      <div class="tipbox only-ok"><span>💡 </span><span id="rTip"></span></div>
+      <div class="facts only-ok" id="rFacts"></div>
+      <div class="note only-ok" id="rNote"></div>
+      <div class="disc only-ok" data-i="disc"></div>
+    </div>
+
+    <button class="expert-link" id="expertBtn"></button>
+
+    <div class="expert-only">
+      <div class="xbox">
+        <div class="xrow">
+          <div><label>Latitude</label><input id="lat" placeholder="19.0900"></div>
+          <div><label>Longitude</label><input id="lon" placeholder="74.7400"></div>
         </div>
-        <footer class="footer">
-            <div class="footer-top">
-                <div class="footer-logo">
-                    <img class="teamlogo" src="wallpapers/logo.png">
-                </div>
-                <div class="footer-name">
-                    <h3>Team Members</h3>
-                    <p>Pranav Mathur</p>
-                    <p>Aditya Pawar</p>
-                    <p>Ashish Goutam</p>
-                    <p>Sameer Patel</p>
-                </div>
-                <div class="footer-contact">
-                    <h3>Contact Us</h3>
-                    <p>Email: example@gmail.com</p>
-                    <p>Email: example@gmail.com</p>
-                    <p>Email: example@gmail.com</p>
-                    <p>Email: example@gmail.com</p>
-                </div>
-                <div class="footer-contact">
-                    <h3>Contact Us</h3>
-                    <p>Email: example@gmail.com</p>
-                    <p>Email: example@gmail.com</p>
-                    <p>Email: example@gmail.com</p>
-                    <p>Email: example@gmail.com</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© 2026 ARUNDHATI. All Rights Reserved.</p>
-            </div>
-        </footer>
-        <div class="translate">
-            <script>
-                document.getElementById("translateBtn").addEventListener("click", function() {
-                    document.getElementById("translateBox").classList.toggle("show");
-                });
-
-                function googleTranslateElementInit() {
-                    new google.translate.TranslateElement(
-                        {pageLanguage: 'en'},
-                        'google_translate_element'
-                    );
-                }
-            </script>
-            <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        <div class="xrow">
+          <div><label>Start date</label><input id="start" type="date"></div>
+          <div><label>End date</label><input id="end" type="date"></div>
         </div>
-    </body>
+        <label>Layer (advanced)</label>
+        <select id="layer">
+          <optgroup label="Vegetation and heat (30 m)">
+            <option value="ndvi">NDVI (crop health) - 30 m</option>
+            <option value="lst">Surface temperature (°C) - 30 m</option>
+          </optgroup>
+          <optgroup label="Soil moisture (SMAP L4, ~9 km)">
+            <option value="sm_surface">Surface soil moisture (0-5 cm)</option>
+            <option value="sm_rootzone">Root-zone soil moisture (0-100 cm)</option>
+            <option value="sm_profile">Profile soil moisture (full depth)</option>
+            <option value="sm_rootzone_pctl">Root-zone moisture percentile</option>
+          </optgroup>
+          <optgroup label="Rainfall">
+            <option value="rain">Rainfall (mm) - 5 km</option>
+          </optgroup>
+        </select>
+        <div class="tech" id="techLine"></div>
+      </div>
+      <div class="card" id="cardWeather">
+        <div class="card-head"><b>Daily weather</b><span>NASA POWER · ~50 km</span></div>
+        <div class="chartbox"><canvas id="chart"></canvas></div>
+      </div>
+      <div class="card" id="cardSoil">
+        <div class="card-head"><b>Soil moisture trend</b><span>SMAP L4 · ~9 km</span></div>
+        <div class="chartbox"><canvas id="chart2"></canvas></div>
+      </div>
+    </div>
+  </aside>
+
+  <main id="mapwrap">
+    <div id="map"></div>
+    <div id="mapTag"></div>
+    <div id="legend">
+      <div class="lt" id="lgTitle"></div>
+      <div class="bar" id="lgBar"></div>
+      <div class="lab"><span id="lgLo"></span><span id="lgHi"></span></div>
+      <div class="lab num-only"><span id="lgMin"></span><span id="lgMax"></span></div>
+    </div>
+    <div id="mapLoader"><div class="big-spin"></div></div>
+  </main>
+</div>
+
+<script>
+// Keep your own backend URL here (change after you deploy online):
+const API = "http://127.0.0.1:8000";
+
+/* =============== TEXT (English / Hindi / Marathi) =============== */
+const T = {
+  en: {
+    sub:"Know your field from space", s1:"Where is your field?", useLoc:"📍 Use my location", orTap:"or tap your field on the map",
+    locSet:"Field selected ✓", s2:"What do you want to know?", s3:"For how many days?", days:"{n} days", go:"Check my field", busy:"Checking…",
+    loading:"Looking at your field from space…", planner:"Open the crop rotation planner →", yourField:"Your field",
+    c_crop:"My crop health", c_crop_s:"Is my crop growing well?", c_soil:"Water in my soil", c_soil_s:"Is the soil wet or dry?",
+    c_heat:"Heat on my land", c_heat_s:"How hot is the ground?", c_rain:"Rain that fell", c_rain_s:"How much rain did I get?",
+    tt_crop:"Crop health", tt_soil:"Soil water", tt_heat:"Ground heat", tt_rain:"Rainfall",
+    lo_crop:"Weak", hi_crop:"Strong", lo_soil:"Dry", hi_soil:"Wet", lo_heat:"Cool", hi_heat:"Hot", lo_rain:"Little", hi_rain:"Lots",
+    crop_good:"Your crop looks healthy", crop_mid:"Your crop is growing, health is average", crop_bad:"Your crop looks weak, or the field is bare",
+    soil_good:"Soil has good water", soil_mid:"Soil water is average", soil_bad:"Soil looks dry",
+    heat_good:"The ground is not too hot", heat_mid:"The ground is warm", heat_bad:"The ground is very hot",
+    rain_low:"Very little rain fell", rain_ok:"Some rain fell", rain_high:"Plenty of rain fell",
+    tip_crop_good:"No problem seen from space. Keep up your routine.", tip_crop_mid:"Keep watching. Look at the field in person this week.",
+    tip_crop_bad:"Visit the field and check for water shortage, pests or disease.",
+    tip_soil_good:"Soil has enough water for now. Check by hand before you irrigate.", tip_soil_mid:"Keep an eye on it and plan your next watering.",
+    tip_soil_bad:"Soil may be dry. Check by hand and think about watering soon.",
+    tip_heat_good:"Comfortable ground temperature for crops.", tip_heat_mid:"Warm ground. Watch your crop in the afternoon.",
+    tip_heat_bad:"Very hot ground can stress crops. Check that they have enough water.",
+    tip_rain_low:"Dry period. Think about irrigation.", tip_rain_ok:"Some rain fell. Check the soil by hand.",
+    tip_rain_high:"Good rain. Make sure water does not collect in the field.",
+    n_crop:"This map is sharp (30 m): you can zoom in to your field.", n_soil:"This map covers a wide area (about 9 km squares), so it shows the general situation around your field.",
+    n_heat:"This map is sharp (30 m). Ground temperature is taken around 10 am and is higher than air temperature.", n_rain:"The rain map is based on 5 km squares.",
+    fTemp:"Average air temperature", fRain:"Rain in this period", mm:"mm", fWetter:"Soil is getting wetter ▲", fDrier:"Soil is getting drier ▼",
+    lastN:"last {n} days", disc:"Satellite estimates are a guide. Please also look at your field and ask your local agriculture officer (KVK) for advice.",
+    needLoc:"Please choose your field first: tap on the map or use your location.", errLoc:"Could not get your location. Please tap on the map instead.",
+    errDates:"Please check your dates.", errClouds:"We could not find clear satellite pictures for this period (clouds). Try 60 or 90 days.",
+    errData:"Satellite data for this period is not ready yet. Try an earlier period.", errServer:"Cannot reach the data server. Please try again in a moment.",
+    errGeneric:"Something went wrong. Please try again.", expertOn:"Show scientific details", expertOff:"Hide scientific details"
+  },
+  hi: {
+    sub:"अंतरिक्ष से अपने खेत को जानें", s1:"आपका खेत कहाँ है?", useLoc:"📍 मेरी लोकेशन इस्तेमाल करें", orTap:"या नक्शे पर अपने खेत को छुएँ",
+    locSet:"खेत चुन लिया गया ✓", s2:"आप क्या जानना चाहते हैं?", s3:"कितने दिनों का?", days:"{n} दिन", go:"मेरा खेत जाँचें", busy:"जाँच रहे हैं…",
+    loading:"अंतरिक्ष से आपके खेत को देख रहे हैं…", planner:"फसल चक्र योजनाकार खोलें →", yourField:"आपका खेत",
+    c_crop:"मेरी फसल की सेहत", c_crop_s:"क्या फसल अच्छी बढ़ रही है?", c_soil:"मिट्टी में नमी", c_soil_s:"मिट्टी गीली है या सूखी?",
+    c_heat:"खेत की गर्मी", c_heat_s:"ज़मीन कितनी गर्म है?", c_rain:"हुई बारिश", c_rain_s:"कितनी बारिश हुई?",
+    tt_crop:"फसल की सेहत", tt_soil:"मिट्टी की नमी", tt_heat:"ज़मीन की गर्मी", tt_rain:"बारिश",
+    lo_crop:"कमज़ोर", hi_crop:"मज़बूत", lo_soil:"सूखी", hi_soil:"गीली", lo_heat:"ठंडी", hi_heat:"गर्म", lo_rain:"कम", hi_rain:"ज़्यादा",
+    crop_good:"आपकी फसल स्वस्थ दिख रही है", crop_mid:"फसल बढ़ रही है, सेहत मध्यम है", crop_bad:"फसल कमज़ोर दिख रही है, या खेत खाली है",
+    soil_good:"मिट्टी में अच्छी नमी है", soil_mid:"मिट्टी में नमी मध्यम है", soil_bad:"मिट्टी सूखी दिख रही है",
+    heat_good:"ज़मीन ज़्यादा गर्म नहीं है", heat_mid:"ज़मीन गर्म है", heat_bad:"ज़मीन बहुत गर्म है",
+    rain_low:"बहुत कम बारिश हुई", rain_ok:"कुछ बारिश हुई", rain_high:"अच्छी बारिश हुई",
+    tip_crop_good:"अंतरिक्ष से कोई समस्या नहीं दिखती। अपनी दिनचर्या जारी रखें।", tip_crop_mid:"नज़र रखें। इसी हफ़्ते खेत जाकर देखें।",
+    tip_crop_bad:"खेत जाकर पानी की कमी, कीट या रोग की जाँच करें।",
+    tip_soil_good:"अभी मिट्टी में पर्याप्त नमी है। सिंचाई से पहले हाथ से जाँच लें।", tip_soil_mid:"नज़र रखें और अगली सिंचाई की योजना बनाएँ।",
+    tip_soil_bad:"मिट्टी सूखी हो सकती है। हाथ से जाँचें और जल्द सिंचाई के बारे में सोचें।",
+    tip_heat_good:"फसल के लिए ज़मीन का तापमान ठीक है।", tip_heat_mid:"ज़मीन गर्म है। दोपहर में फसल पर नज़र रखें।",
+    tip_heat_bad:"बहुत गर्म ज़मीन फसल पर दबाव डाल सकती है। देखें कि पानी पर्याप्त है।",
+    tip_rain_low:"सूखा समय है। सिंचाई के बारे में सोचें।", tip_rain_ok:"कुछ बारिश हुई है। मिट्टी हाथ से जाँचें।",
+    tip_rain_high:"अच्छी बारिश हुई। देखें कि खेत में पानी जमा न हो।",
+    n_crop:"यह नक्शा बहुत बारीक (30 मीटर) है: आप अपने खेत तक ज़ूम कर सकते हैं।", n_soil:"यह नक्शा बड़े इलाके (लगभग 9 किमी के वर्ग) का है, इसलिए आपके खेत के आसपास की सामान्य स्थिति दिखाता है।",
+    n_heat:"यह नक्शा बारीक (30 मीटर) है। ज़मीन का तापमान लगभग सुबह 10 बजे का है और हवा के तापमान से ज़्यादा होता है।", n_rain:"बारिश का नक्शा 5 किमी के वर्गों पर आधारित है।",
+    fTemp:"औसत हवा का तापमान", fRain:"इस अवधि में बारिश", mm:"मिमी", fWetter:"मिट्टी में नमी बढ़ रही है ▲", fDrier:"मिट्टी में नमी घट रही है ▼",
+    lastN:"पिछले {n} दिन", disc:"सैटेलाइट के अनुमान केवल मार्गदर्शन हैं। अपने खेत को खुद भी देखें और स्थानीय कृषि अधिकारी (KVK) से सलाह लें।",
+    needLoc:"पहले अपना खेत चुनें: नक्शे पर छुएँ या अपनी लोकेशन इस्तेमाल करें।", errLoc:"आपकी लोकेशन नहीं मिल पाई। कृपया नक्शे पर छुएँ।",
+    errDates:"कृपया तारीखें जाँचें।", errClouds:"इस अवधि में साफ़ सैटेलाइट तस्वीरें नहीं मिलीं (बादल)। 60 या 90 दिन चुनकर देखें।",
+    errData:"इस अवधि का सैटेलाइट डेटा अभी तैयार नहीं है। पहले की अवधि चुनें।", errServer:"डेटा सर्वर से संपर्क नहीं हो पाया। कृपया थोड़ी देर में फिर कोशिश करें।",
+    errGeneric:"कुछ गड़बड़ हो गई। कृपया फिर कोशिश करें।", expertOn:"वैज्ञानिक विवरण दिखाएँ", expertOff:"वैज्ञानिक विवरण छिपाएँ"
+  },
+  mr: {
+    sub:"अंतराळातून तुमचे शेत जाणून घ्या", s1:"तुमचे शेत कुठे आहे?", useLoc:"📍 माझे लोकेशन वापरा", orTap:"किंवा नकाशावर तुमचे शेत निवडा",
+    locSet:"शेत निवडले ✓", s2:"तुम्हाला काय जाणून घ्यायचे आहे?", s3:"किती दिवसांचा?", days:"{n} दिवस", go:"माझे शेत तपासा", busy:"तपासत आहोत…",
+    loading:"अंतराळातून तुमचे शेत पाहत आहोत…", planner:"पीक फेरपालट नियोजक उघडा →", yourField:"तुमचे शेत",
+    c_crop:"माझ्या पिकाचे आरोग्य", c_crop_s:"पीक चांगले वाढत आहे का?", c_soil:"जमिनीतील ओलावा", c_soil_s:"जमीन ओली आहे की कोरडी?",
+    c_heat:"शेतातील उष्णता", c_heat_s:"जमीन किती तापली आहे?", c_rain:"पडलेला पाऊस", c_rain_s:"किती पाऊस पडला?",
+    tt_crop:"पिकाचे आरोग्य", tt_soil:"जमिनीचा ओलावा", tt_heat:"जमिनीची उष्णता", tt_rain:"पाऊस",
+    lo_crop:"कमकुवत", hi_crop:"मजबूत", lo_soil:"कोरडी", hi_soil:"ओली", lo_heat:"थंड", hi_heat:"तापलेली", lo_rain:"कमी", hi_rain:"जास्त",
+    crop_good:"तुमचे पीक निरोगी दिसत आहे", crop_mid:"पीक वाढत आहे, आरोग्य मध्यम आहे", crop_bad:"पीक कमकुवत दिसते, किंवा शेत रिकामे आहे",
+    soil_good:"जमिनीत चांगला ओलावा आहे", soil_mid:"जमिनीतील ओलावा मध्यम आहे", soil_bad:"जमीन कोरडी दिसते",
+    heat_good:"जमीन फार तापलेली नाही", heat_mid:"जमीन तापलेली आहे", heat_bad:"जमीन खूप तापलेली आहे",
+    rain_low:"खूप कमी पाऊस पडला", rain_ok:"थोडा पाऊस पडला", rain_high:"भरपूर पाऊस पडला",
+    tip_crop_good:"अंतराळातून कोणतीही अडचण दिसत नाही. तुमची नेहमीची कामे चालू ठेवा.", tip_crop_mid:"लक्ष ठेवा. याच आठवड्यात शेतात जाऊन पाहणी करा.",
+    tip_crop_bad:"शेतात जाऊन पाण्याची कमतरता, कीड किंवा रोग तपासा.",
+    tip_soil_good:"सध्या जमिनीत पुरेसा ओलावा आहे. पाणी देण्यापूर्वी हाताने तपासा.", tip_soil_mid:"लक्ष ठेवा आणि पुढील पाण्याचे नियोजन करा.",
+    tip_soil_bad:"जमीन कोरडी असू शकते. हाताने तपासा आणि लवकर पाणी देण्याचा विचार करा.",
+    tip_heat_good:"पिकांसाठी जमिनीचे तापमान योग्य आहे.", tip_heat_mid:"जमीन तापलेली आहे. दुपारी पिकावर लक्ष ठेवा.",
+    tip_heat_bad:"खूप तापलेली जमीन पिकावर ताण आणू शकते. पुरेसे पाणी आहे का ते पाहा.",
+    tip_rain_low:"कोरडा काळ आहे. पाणी देण्याचा विचार करा.", tip_rain_ok:"थोडा पाऊस झाला आहे. जमीन हाताने तपासा.",
+    tip_rain_high:"चांगला पाऊस झाला. शेतात पाणी साचू नये याकडे लक्ष द्या.",
+    n_crop:"हा नकाशा बारकाईचा (30 मीटर) आहे: तुम्ही तुमच्या शेतापर्यंत झूम करू शकता.", n_soil:"हा नकाशा मोठ्या क्षेत्राचा (सुमारे 9 किमीचे चौकोन) आहे, म्हणून तुमच्या शेताभोवतीची सर्वसाधारण स्थिती दाखवतो.",
+    n_heat:"हा नकाशा बारकाईचा (30 मीटर) आहे. जमिनीचे तापमान सुमारे सकाळी 10 वाजेचे असते आणि हवेच्या तापमानापेक्षा जास्त असते.", n_rain:"पावसाचा नकाशा 5 किमीच्या चौकोनांवर आधारित आहे.",
+    fTemp:"सरासरी हवेचे तापमान", fRain:"या कालावधीतील पाऊस", mm:"मिमी", fWetter:"जमिनीतील ओलावा वाढत आहे ▲", fDrier:"जमिनीतील ओलावा कमी होत आहे ▼",
+    lastN:"मागील {n} दिवस", disc:"उपग्रहाचे अंदाज फक्त मार्गदर्शनासाठी आहेत. तुमचे शेत स्वतः पाहा आणि स्थानिक कृषी अधिकाऱ्यांचा (KVK) सल्ला घ्या.",
+    needLoc:"आधी तुमचे शेत निवडा: नकाशावर टॅप करा किंवा तुमचे लोकेशन वापरा.", errLoc:"तुमचे लोकेशन मिळाले नाही. कृपया नकाशावर टॅप करा.",
+    errDates:"कृपया तारखा तपासा.", errClouds:"या कालावधीत स्पष्ट उपग्रह प्रतिमा मिळाल्या नाहीत (ढग). 60 किंवा 90 दिवस निवडून पहा.",
+    errData:"या कालावधीचा उपग्रह डेटा अजून तयार नाही. आधीचा कालावधी निवडा.", errServer:"डेटा सर्व्हरशी संपर्क होऊ शकला नाही. कृपया थोड्या वेळाने पुन्हा प्रयत्न करा.",
+    errGeneric:"काहीतरी चूक झाली. कृपया पुन्हा प्रयत्न करा.", expertOn:"वैज्ञानिक तपशील दाखवा", expertOff:"वैज्ञानिक तपशील लपवा"
+  }
+};
+
+/* =============== LAYER SETTINGS (named LAYERS so it never clashes with Leaflet's "L") =============== */
+const SMC = ["#a50026","#fdae61","#ffffbf","#abd9e9","#2c7bb6"];
+const SOIL_LV = [[0.15,"soil_bad","bad"],[0.30,"soil_mid","mid"],[9,"soil_good","good"]];
+const LAYERS = {
+  ndvi: { topic:"crop", min:0, max:0.8, colors:["#d73027","#fee08b","#a6d96a","#1a9850"], dec:2, unit:"",
+          levels:[[0.2,"crop_bad","bad"],[0.5,"crop_mid","mid"],[9,"crop_good","good"]], exp:"Mean NDVI" },
+  lst:  { topic:"heat", min:15, max:45, colors:["#313695","#ffffbf","#a50026"], dec:1, unit:" °C",
+          levels:[[30,"heat_good","good"],[40,"heat_mid","mid"],[99,"heat_bad","bad"]], exp:"Mean surface temperature" },
+  rain: { topic:"rain", min:0, max:150, colors:["#ffffff","#74add1","#08306b"], dec:0, unit:" mm",
+          levels:[[10,"rain_low","mid"],[60,"rain_ok","good"],[1e9,"rain_high","good"]], exp:"Total rainfall" },
+  sm_surface:  { topic:"soil", min:0.05, max:0.5, colors:SMC, dec:3, unit:" m³/m³", levels:SOIL_LV, exp:"Mean surface soil moisture" },
+  sm_rootzone: { topic:"soil", min:0.05, max:0.5, colors:SMC, dec:3, unit:" m³/m³", levels:SOIL_LV, exp:"Mean root-zone soil moisture" },
+  sm_profile:  { topic:"soil", min:0.05, max:0.5, colors:SMC, dec:3, unit:" m³/m³", levels:SOIL_LV, exp:"Mean profile soil moisture" },
+  sm_rootzone_pctl: { topic:"soil", min:0, max:100, colors:SMC, dec:0, unit:" %", exp:"Mean root-zone moisture percentile",
+          levels:[[25,"soil_bad","bad"],[45,"soil_mid","mid"],[101,"soil_good","good"]] }
+};
+const TOPIC_LAYER = { crop:"ndvi", soil:"sm_rootzone", heat:"lst", rain:"rain" };
+const EMO = { crop:"🌱", soil:"💧", heat:"🌡️", rain:"🌧️" };
+const FACE = { good:"😊", mid:"😐", bad:"😟" };
+
+/* =============== STATE & HELPERS =============== */
+const $ = (id) => document.getElementById(id);
+const state = { lang:"en", loc:null, layer:"ndvi", days:30, last:null, shown:null, expert:false };
+const t = (k) => (T[state.lang] && T[state.lang][k]) || T.en[k] || k;
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtP = d => `${d.slice(6)} ${MONTHS[+d.slice(4,6)-1]}`;
+const fmtI = d => `${d.slice(8)} ${MONTHS[+d.slice(5,7)-1]}`;
+const iso = (d) => d.toISOString().slice(0,10);
+const avg = (a) => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+const resText = (m) => m >= 1000 ? "~" + Math.round(m/1000) + " km" : m + " m";
+try { const s = localStorage.getItem("fs_lang"); if (s && T[s]) state.lang = s; } catch(e) {}
+
+function countUp(el, to, dec, suffix) {
+  const t0 = performance.now(), dur = 900;
+  (function f(now) {
+    const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3);
+    el.textContent = (to*e).toFixed(dec) + suffix;
+    if (k < 1) requestAnimationFrame(f);
+  })(t0);
+}
+
+/* =============== MAP =============== */
+const map = L.map("map", { zoomControl:true }).setView([19.09, 74.74], 9);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { attribution:"Tiles © Esri", maxZoom:18 }).addTo(map);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom:18, zIndex:5 }).addTo(map);
+const pinIcon = L.divIcon({ className:"", html:'<div class="pin"><div class="ring"></div><div class="dot2"></div></div>',
+                            iconSize:[20,20], iconAnchor:[10,10] });
+let marker = null, geeLayer = null, chart = null, chart2 = null;
+
+function setLocation(lat, lon, fly) {
+  state.loc = { lat, lon };
+  $("lat").value = lat.toFixed(4); $("lon").value = lon.toFixed(4);
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([lat, lon], { icon:pinIcon }).addTo(map);
+  marker.bindTooltip(t("yourField"), { permanent:true, direction:"top", offset:[0,-12], className:"field-tip" });
+  if (fly) map.flyTo([lat, lon], 14, { duration:1.2 });
+  updateLocState();
+}
+map.on("click", (e) => setLocation(e.latlng.lat, e.latlng.lng, false));
+
+function boundsFor(lat, lon, rKm) {
+  const dLat = rKm/111, dLon = rKm/(111*Math.cos(lat*Math.PI/180));
+  return [[lat-dLat, lon-dLon],[lat+dLat, lon+dLon]];
+}
+
+/* =============== UI UPDATES =============== */
+function updateLocState() { $("locState").textContent = state.loc ? t("locSet") : ""; }
+
+function applyLang() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll("[data-i]").forEach(el => el.textContent = t(el.dataset.i));
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === state.lang));
+  document.querySelectorAll("#pills button").forEach(b => b.textContent = t("days").replace("{n}", b.dataset.days));
+  $("btnText").textContent = $("goBtn").classList.contains("loading") ? t("busy") : t("go");
+  $("expertBtn").textContent = state.expert ? t("expertOff") : t("expertOn");
+  if (marker && marker.getTooltip()) marker.setTooltipContent(t("yourField"));
+  updateLocState(); updateLegend(); updateTag(); renderResult();
+}
+
+function setBusy(on) {
+  $("goBtn").disabled = on;
+  $("goBtn").classList.toggle("loading", on);
+  $("btnText").textContent = on ? t("busy") : t("go");
+  $("mapLoader").classList.toggle("show", on);
+  $("skeleton").classList.toggle("show", on);
+}
+
+function setLayer(layer) {
+  state.layer = layer; $("layer").value = layer;
+  const topic = LAYERS[layer].topic;
+  document.querySelectorAll(".topic").forEach(b => b.classList.toggle("sel", b.dataset.topic === topic));
+}
+
+function setDays(n) {
+  const end = new Date(); end.setDate(end.getDate() - 5);          // satellite data lags a few days
+  const st = new Date(end); st.setDate(st.getDate() - n);
+  $("end").value = iso(end); $("start").value = iso(st);
+  state.days = n;
+  document.querySelectorAll("#pills button").forEach(b => b.classList.toggle("sel", +b.dataset.days === n));
+}
+
+function updateLegend() {
+  if (!state.shown) return;
+  const c = LAYERS[state.shown.layer];
+  $("lgTitle").textContent = t("tt_" + c.topic);
+  $("lgBar").style.background = `linear-gradient(to right, ${c.colors.join(",")})`;
+  $("lgLo").textContent = t("lo_" + c.topic); $("lgHi").textContent = t("hi_" + c.topic);
+  $("lgMin").textContent = c.min; $("lgMax").textContent = c.max;
+}
+function showLegend() {
+  updateLegend();
+  const lg = $("legend"); lg.classList.remove("show"); void lg.offsetWidth; lg.classList.add("show");
+}
+function updateTag() {
+  if (!state.shown) return;
+  const c = LAYERS[state.shown.layer];
+  const tg = $("mapTag");
+  tg.textContent = `${EMO[c.topic]} ${t("tt_" + c.topic)} · ${t("lastN").replace("{n}", state.shown.days)}`;
+  tg.classList.remove("show"); void tg.offsetWidth; tg.classList.add("show");
+}
+
+/* =============== RESULT CARD =============== */
+function renderResult() {
+  const r = $("result"), d = state.last;
+  if (!d) { r.classList.remove("show"); return; }
+  r.classList.remove("show"); void r.offsetWidth;
+
+  if (d.err || d.mean == null) {
+    r.className = "result show lvl-err";
+    $("rFace").textContent = "😕";
+    $("rTopic").textContent = "";
+    $("rVerdict").textContent = t(d.err || "errData");
+    return;
+  }
+  const c = LAYERS[d.layer];
+  const score = d.layer === "rain" ? d.mean * 30 / d.days : d.mean;     // rain judged per 30 days
+  const lv = c.levels.find(x => score < x[0]) || c.levels[c.levels.length - 1];
+
+  r.className = "result show lvl-" + lv[2];
+  $("rFace").textContent = FACE[lv[2]];
+  $("rTopic").textContent = `${EMO[c.topic]} ${t("tt_" + c.topic)}`;
+  $("rVerdict").textContent = t(lv[1]);
+  $("rTip").textContent = t("tip_" + lv[1]);
+  $("rNote").textContent = t("n_" + c.topic);
+
+  const big = $("rBig");
+  if (d.layer === "rain") countUp(big, d.mean, 0, " " + t("mm")); else big.textContent = "";
+
+  $("gBar").style.background = `linear-gradient(to right, ${c.colors.join(",")})`;
+  $("gLo").textContent = t("lo_" + c.topic); $("gHi").textContent = t("hi_" + c.topic);
+  const mk = $("gMark"); mk.style.left = "0%";
+  const pct = Math.max(3, Math.min(97, (score - c.min) / (c.max - c.min) * 100));
+  setTimeout(() => { mk.style.left = pct + "%"; }, 80);
+
+  const facts = [];
+  if (d.trend != null) facts.push(d.trend >= 0 ? "💧 " + t("fWetter") : "💧 " + t("fDrier"));
+  if (d.avgTemp != null) facts.push(`🌡️ ${t("fTemp")}: ${d.avgTemp.toFixed(1)} °C`);
+  if (d.rainFact != null && d.layer !== "rain") facts.push(`🌧️ ${t("fRain")}: ${Math.round(d.rainFact)} ${t("mm")}`);
+  $("rFacts").innerHTML = facts.map(f => `<div class="fact">${f}</div>`).join("");
+
+  $("techLine").textContent = `${c.exp}: ${d.mean.toFixed(c.dec)}${c.unit} · Resolution: ${resText(d.res)}` +
+                              (d.scenes ? ` · Images used: ${d.scenes}` : "");
+}
+function fail(err, message) { state.last = { err, message }; renderResult(); }
+
+/* =============== EXPERT CHARTS =============== */
+Chart.defaults.font.family = "Inter, 'Noto Sans Devanagari', system-ui, sans-serif";
+Chart.defaults.color = "#64748b";
+Chart.defaults.interaction = { mode:"index", intersect:false };
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+Chart.defaults.plugins.tooltip.backgroundColor = "#0f172a";
+Chart.defaults.plugins.tooltip.cornerRadius = 10;
+function grad(ch, c1, c2) {
+  const a = ch.chartArea; if (!a) return c1;
+  const g = ch.ctx.createLinearGradient(0, a.top, 0, a.bottom); g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+}
+function showCard(id) { const c = $(id); c.classList.remove("show"); void c.offsetWidth; c.classList.add("show"); }
+
+function drawWeather(days, temps, rains) {
+  if (chart) chart.destroy();
+  showCard("cardWeather");
+  chart = new Chart($("chart"), {
+    data: { labels: days.map(fmtP), datasets: [
+      { type:"line", label:"Temperature (°C)", data:temps, yAxisID:"y", borderColor:"#ef4444", borderWidth:2.5, tension:.4,
+        pointRadius:0, pointHoverRadius:5, fill:true, backgroundColor:(c)=>grad(c.chart,"rgba(239,68,68,.30)","rgba(239,68,68,0)") },
+      { type:"bar", label:"Rainfall (mm)", data:rains, yAxisID:"y1", borderRadius:6, maxBarThickness:14,
+        backgroundColor:(c)=>grad(c.chart,"rgba(96,165,250,.95)","rgba(37,99,235,.45)") } ] },
+    options: { maintainAspectRatio:false, animation:{ duration:1200, easing:"easeOutQuart" },
+      scales: { x:{ grid:{display:false}, ticks:{ maxTicksLimit:6, maxRotation:0 } },
+        y:{ position:"left", border:{display:false}, grid:{color:"#eef2f7"}, ticks:{callback:v=>v+"°"} },
+        y1:{ position:"right", min:0, suggestedMax:10, border:{display:false}, grid:{drawOnChartArea:false} } } }
+  });
+}
+function drawSoil(s) {
+  if (chart2) chart2.destroy();
+  showCard("cardSoil");
+  chart2 = new Chart($("chart2"), {
+    type:"line",
+    data: { labels: s.dates.map(fmtI), datasets: [
+      { label:"Surface (0-5 cm)", data:s.sm_surface, borderColor:"#f59e0b", borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
+        spanGaps:true, fill:true, backgroundColor:(c)=>grad(c.chart,"rgba(245,158,11,.28)","rgba(245,158,11,0)") },
+      { label:"Root zone (0-100 cm)", data:s.sm_rootzone, borderColor:"#2563eb", borderWidth:2.5, tension:.4, pointRadius:0, pointHoverRadius:5,
+        spanGaps:true, fill:true, backgroundColor:(c)=>grad(c.chart,"rgba(37,99,235,.28)","rgba(37,99,235,0)") } ] },
+    options: { maintainAspectRatio:false, animation:{ duration:1200, easing:"easeOutQuart" },
+      scales: { x:{ grid:{display:false}, ticks:{ maxTicksLimit:6, maxRotation:0 } },
+                y:{ border:{display:false}, grid:{color:"#eef2f7"}, title:{display:true, text:"m³/m³"} } } }
+  });
+}
+
+/* =============== MAIN ACTION =============== */
+async function run() {
+  const la = parseFloat($("lat").value), lo = parseFloat($("lon").value);
+  if (isNaN(la) || isNaN(lo)) {
+    $("mapwrap").classList.remove("nudge"); void $("mapwrap").offsetWidth; $("mapwrap").classList.add("nudge");
+    return fail("needLoc");
+  }
+  if (!state.loc || state.loc.lat !== la || state.loc.lon !== lo) setLocation(la, lo, false);
+
+  const layer = state.layer, start = $("start").value, end = $("end").value;
+  if (!start || !end || start >= end) return fail("errDates");
+  const days = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000));
+  const q = `lat=${la}&lon=${lo}&start=${start}&end=${end}`;
+
+  setBusy(true);
+  state.last = null; renderResult();
+  $("cardWeather").classList.remove("show"); $("cardSoil").classList.remove("show");
+  if (chart2) { chart2.destroy(); chart2 = null; }
+
+  try {
+    // 1) Earth Engine map layer
+    const g = await (await fetch(`${API}/api/gee/map?${q}&layer=${layer}`)).json();
+    if (g.detail) {
+      const m = String(g.detail);
+      return fail(m.includes("No clear Landsat") ? "errClouds" : m.includes("SMAP") ? "errData" : "errGeneric", m);
+    }
+    if (geeLayer) map.removeLayer(geeLayer);
+    geeLayer = L.tileLayer(g.tile_url, { opacity:0.8 }).addTo(map);
+    map.flyToBounds(boundsFor(la, lo, g.resolution_m >= 1000 ? (layer.startsWith("sm_") ? 60 : 30) : 8), { duration:1.4, padding:[30,30] });
+
+    state.shown = { layer, days };
+    state.last = { layer, mean:g.mean, days, scenes:g.scenes, res:g.resolution_m };
+    showLegend(); updateTag(); renderResult();
+    $("skeleton").classList.remove("show");
+
+    // 2) NASA POWER (air temperature + rain), optional
+    try {
+      const p = await (await fetch(`${API}/api/power?${q}&params=T2M,PRECTOTCORR`)).json();
+      if (!p.detail) {
+        const dk = Object.keys(p.T2M), temps = dk.map(k => p.T2M[k]), rains = dk.map(k => p.PRECTOTCORR[k]);
+        const vt = temps.filter(v => v != null), vr = rains.filter(v => v != null);
+        state.last.avgTemp = avg(vt);
+        state.last.rainFact = vr.length ? vr.reduce((a,b)=>a+b,0) : null;
+        renderResult();
+        drawWeather(dk, temps, rains);
+      }
+    } catch (e) { console.warn("POWER failed", e); }
+
+    // 3) Soil moisture trend (soil layers only), optional
+    if (layer.startsWith("sm_")) {
+      try {
+        const s = await (await fetch(`${API}/api/smap/timeseries?${q}`)).json();
+        if (!s.detail) {
+          const vz = s.sm_rootzone.filter(v => v != null);
+          if (vz.length > 1) { state.last.trend = vz[vz.length-1] - vz[0]; renderResult(); }
+          drawSoil(s);
+        }
+      } catch (e) { console.warn("SMAP series failed", e); }
+    }
+  } catch (err) {
+    console.error(err);
+    fail(err instanceof TypeError ? "errServer" : "errGeneric", err.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+/* =============== WIRING =============== */
+document.querySelectorAll(".lang button").forEach(b => b.onclick = () => {
+  state.lang = b.dataset.lang;
+  try { localStorage.setItem("fs_lang", state.lang); } catch(e) {}
+  applyLang();
+});
+document.querySelectorAll(".topic").forEach(b => b.onclick = () => setLayer(TOPIC_LAYER[b.dataset.topic]));
+document.querySelectorAll("#pills button").forEach(b => b.onclick = () => setDays(+b.dataset.days));
+$("layer").onchange = () => setLayer($("layer").value);
+["lat","lon"].forEach(id => $(id).addEventListener("change", () => {
+  const la = parseFloat($("lat").value), lo = parseFloat($("lon").value);
+  if (!isNaN(la) && !isNaN(lo)) setLocation(la, lo, true);
+}));
+["start","end"].forEach(id => $(id).addEventListener("change", () => {
+  const a = $("start").value, b = $("end").value;
+  if (a && b) { state.days = Math.round((new Date(b) - new Date(a)) / 86400000);
+                document.querySelectorAll("#pills button").forEach(x => x.classList.remove("sel")); }
+}));
+$("goBtn").onclick = run;
+$("gpsBtn").onclick = () => {
+  if (!navigator.geolocation) return fail("errLoc");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => setLocation(pos.coords.latitude, pos.coords.longitude, true),
+    () => fail("errLoc"), { enableHighAccuracy:true, timeout:10000 });
+};
+$("expertBtn").onclick = () => {
+  state.expert = !state.expert;
+  document.body.classList.toggle("expert", state.expert);
+  $("expertBtn").textContent = state.expert ? t("expertOff") : t("expertOn");
+  setTimeout(() => { if (chart) chart.resize(); if (chart2) chart2.resize(); }, 60);
+};
+
+// start-up
+setLayer("ndvi");
+setDays(30);
+applyLang();
+</script>
+<script src="extras.js"></script>
+<script src="kvk.js"></script>
+<script>
+(function syncPlannerBridge() {
+  const PLANNER_PAGE = "planner.html"; // <-- Change if your planner file has a different name
+
+  // 1. Outgoing: Pass selected field & language when clicking "Open the crop rotation planner ->"
+  const plannerLink = document.querySelector("a.planner");
+  if (plannerLink) {
+    plannerLink.href = PLANNER_PAGE;
+    plannerLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams({ lang: state.lang });
+      if (state.loc) {
+        params.set("lat", state.loc.lat.toFixed(4));
+        params.set("lon", state.loc.lon.toFixed(4));
+        try {
+          localStorage.setItem("fs_shared_farm", JSON.stringify({
+            lat: state.loc.lat,
+            lon: state.loc.lon,
+            lang: state.lang
+          }));
+        } catch (err) {}
+      }
+      window.location.href = `${PLANNER_PAGE}?${params.toString()}`;
+    });
+  }
+
+  // 2. Incoming: Auto-load field coordinates sent from the Rotation Planner and run analysis
+  const qs = new URLSearchParams(window.location.search);
+  let lat = parseFloat(qs.get("lat"));
+  let lon = parseFloat(qs.get("lon"));
+  let lang = qs.get("lang");
+
+  if (Number.isNaN(lat) || Number.isNaN(lon)) {
+    try {
+      const saved = JSON.parse(localStorage.getItem("fs_shared_farm") || "null");
+      if (saved && typeof saved.lat === "number" && typeof saved.lon === "number") {
+        lat = saved.lat;
+        lon = saved.lon;
+        lang = lang || saved.lang;
+      }
+    } catch (err) {}
+  }
+
+  if (lang && T[lang]) {
+    state.lang = lang;
+    const langSel = document.getElementById("langSel");
+    if (langSel) langSel.value = lang;
+    applyLang();
+  }
+
+  if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+    setLocation(lat, lon, true);
+    run();
+  }
+})();
+</script>
+<script src="extras.js"></script>
+<script src="kvk.js"></script>
+<script>
+(function syncPlannerRepoBridge() {
+  // Point this to Repo 1's planner page (local path or deployed URL)
+  const PLANNER_URL = "../3rdpart.html";
+
+  // 1. Outgoing: Wire "Open the crop rotation planner ->" to pass the selected field back to Repo 1
+  const plannerLink = document.querySelector("a.planner");
+  if (plannerLink) {
+    plannerLink.href = PLANNER_URL;
+    plannerLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams({ lang: state.lang });
+      if (state.loc) {
+        params.set("lat", state.loc.lat.toFixed(4));
+        params.set("lon", state.loc.lon.toFixed(4));
+      }
+      window.location.href = `${PLANNER_URL}?${params.toString()}`;
+    });
+  }
+
+  // 2. Incoming: Read ?lat=&lon=&lang= from Repo 1, place pin, sync language, and run check
+  const qs = new URLSearchParams(window.location.search);
+  const lat = parseFloat(qs.get("lat"));
+  const lon = parseFloat(qs.get("lon"));
+  const lang = qs.get("lang");
+
+  if (lang && T[lang]) {
+    state.lang = lang;
+    const langSel = document.getElementById("langSel");
+    if (langSel) langSel.value = lang;
+    applyLang();
+  }
+
+  if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+    setLocation(lat, lon, true);
+    run();
+  }
+})();
+</script>
+</body>
+</body>
+</body>
 </html>

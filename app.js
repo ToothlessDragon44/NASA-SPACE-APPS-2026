@@ -936,3 +936,46 @@ stateSelect.value = "Maharashtra";
 populateDistrictDropdown("Maharashtra", "Ahilyanagar");
 syncPrevCropDropdown();
 selectLocation(19.0948, 74.7480, "Ahilyanagar, Maharashtra");
+
+// Point this to Repo 2's index.html (local path or deployed URL)
+const INSIGHTS_URL = "../4thpart.html";
+
+// 1. Outgoing: Send active farm coordinates & language to Satellite Insights (Repo 2)
+const openInsightsBtn = document.getElementById("open-insights-btn");
+if (openInsightsBtn) {
+  openInsightsBtn.addEventListener("click", () => {
+    const params = new URLSearchParams({
+      lat: currentState.lat.toFixed(4),
+      lon: currentState.lon.toFixed(4),
+      lang: typeof currentLang !== "undefined" ? currentLang : "en"
+    });
+    window.location.href = `${INSIGHTS_URL}?${params.toString()}`;
+  });
+}
+
+// 2. Incoming: If arriving from Satellite Insights with ?lat=&lon=&lang=, auto-load that field
+(async function loadIncomingFieldFromInsights() {
+  const qs = new URLSearchParams(window.location.search);
+  const lat = parseFloat(qs.get("lat"));
+  const lon = parseFloat(qs.get("lon"));
+  const lang = qs.get("lang");
+
+  if (lang && typeof LANG_STRINGS !== "undefined" && LANG_STRINGS[lang]) {
+    currentLang = lang;
+    document.querySelectorAll(".lang-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+    });
+    if (typeof applyLanguageUI === "function") applyLanguageUI();
+  }
+
+  if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+    stateSelect.value = "";
+    populateDistrictDropdown("");
+    const matchedLabel = typeof syncDropdownsFromGps === "function"
+      ? await syncDropdownsFromGps(lat, lon)
+      : null;
+    map.flyTo([lat, lon], 11, { duration: 1.0 });
+    await selectLocation(lat, lon, matchedLabel || `Field (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`);
+  }
+})();
+
