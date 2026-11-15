@@ -60,6 +60,7 @@
             <div id="translateBox">
                 <div id="google_translate_element"></div>
             </div>
+
             <div class="news">
                 <h3>Hotline</h3>
                 <div class="h1">HEAD1</div>
@@ -69,8 +70,26 @@
                 <div class="h5">HEAD1</div>
                 <div class="h6">HEAD1</div>
             </div>
+
+            <div class="weather1">
+                <div>
+                    <div class="weather-box">
+
+                        <h2>LOCAL WEATHER</h2>
+
+                        <div id="weather">
+                            Loading weather...
+                        </div>
+
+                        <button onclick="getWeather()">Refresh Weather</button>
+
+                    </div>
+                </div>
+                <!--<div>
+                    <img class="map" src="wallpapers/map.png">
+                </div>-->
+            </div>
         </div>
-        
         <footer class="footer">
             <div class="footer-top">
                 <div class="footer-logo">
@@ -118,5 +137,6 @@
             </script>
             <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
         </div>
+        <script src="weather.js"></script>
     </body>
 </html>

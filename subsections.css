@@ -9,7 +9,7 @@
     margin-left: 300px;
     margin-top: 50px;
     margin-right: 300px;
-    margin-bottom: 700px;
+    margin-bottom: 50px;
 }
 .news h3{
     margin-top: 0;
@@ -27,4 +27,49 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+
+.weather-box {
+    width: 450px;
+    padding: 20px;
+    background-color: #17645f;
+    color: white;
+    border-radius: 12px;
+    font-family: "Michroma", sans-serif;
+    text-align: center;
+}
+
+.weather-box h2 {
+    font-size: 17px;
+    margin-bottom: 20px;
+}
+
+#weather {
+    font-size: 14px;
+    line-height: 2;
+}
+
+.weather-box button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    background-color: rgb(37, 125, 193);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.weather-box button:hover {
+    background-color: rgb(0, 90, 150);
+}
+
+.weather1{
+    background-color: lightpink;
+    height: 485px;
+    border-radius: 5px;
+    margin-left: 300px;
+    margin-top: 50px;
+    margin-right: 300px;
+    margin-bottom: 150px;
 }
